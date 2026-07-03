@@ -977,7 +977,7 @@
 </div>
 
 <script>
-  /* ===== Cek status login (diisi oleh login-kasir.html) ===== */
+  /* ===== Cek status login (diisi oleh index.html) ===== */
   const AUTH_STORAGE_KEY = 'pos_kasir_auth';
   const TAB_MARKER = 'pos_kasir_tab_active';
 
@@ -989,7 +989,7 @@
 
   const authRaw = localStorage.getItem(AUTH_STORAGE_KEY);
   if(!authRaw){
-    window.location.href = 'login-kasir.html';
+    window.location.href = 'index.html';
   } else {
     window.name = TAB_MARKER;
   }
@@ -1007,7 +1007,7 @@
     if(confirm('Keluar dan ganti kasir?')){
       localStorage.removeItem(AUTH_STORAGE_KEY);
       window.name = '';
-      window.location.href = 'login-kasir.html';
+      window.location.href = 'index.html';
     }
   });
 </script>
@@ -1941,7 +1941,7 @@
     setTimeout(()=>{
       localStorage.removeItem(AUTH_STORAGE_KEY);
       window.name = '';
-      window.location.href = 'login-kasir.html';
+      window.location.href = 'index.html';
     }, 1500);
   });
 </script>
