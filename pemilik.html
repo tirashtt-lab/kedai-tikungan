@@ -1037,7 +1037,7 @@
   try{ auth = JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) || 'null'); }catch(e){ auth = null; }
   const OWNER_ROLES = ['admin', 'pemilik'];
   if(!auth || !OWNER_ROLES.includes(String(auth.role).toLowerCase())){
-    window.location.href = 'login-kasir.html';
+    window.location.href = 'index.html';
   } else {
     window.name = TAB_MARKER;
   }
@@ -1107,7 +1107,7 @@
     openConfirm('Keluar dari akun?', 'Anda perlu login kembali untuk mengakses halaman ini.', ()=>{
       localStorage.removeItem(AUTH_STORAGE_KEY);
       window.name = '';
-      window.location.href = 'login-kasir.html';
+      window.location.href = 'index.html';
     }, 'Keluar');
   }
 
@@ -2364,7 +2364,7 @@
     setTimeout(()=>{
       localStorage.removeItem(AUTH_STORAGE_KEY);
       window.name = '';
-      window.location.href = 'login-kasir.html';
+      window.location.href = 'index.html';
     }, 1500);
   });
 
