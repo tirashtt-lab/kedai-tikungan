@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Masuk — Kedai Tikungan</title>
+<script>
+  (function(){
+    var saved = localStorage.getItem('pos_kasir_theme');
+    if(saved === 'light'){ document.documentElement.setAttribute('data-theme','light'); }
+  })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --bg:#0b0d12;
+    --panel:#14171f;
+    --panel-2:#1b1f29;
+    --line:#262b37;
+    --line-soft:#1e222c;
+    --text:#f2f4f8;
+    --text-dim:#8f9ab0;
+    --text-faint:#4b5468;
+    --teal:#2dd4bf;
+    --teal-dim:#173f3b;
+    --teal-deep:#04211d;
+    --teal-soft:rgba(45,212,191,0.14);
+    --amber-glow:rgba(255,178,107,0.16);
+    --danger:#f87171;
+  }
+  html[data-theme="light"]{
+    --bg:#f4f5f7;
+    --panel:#ffffff;
+    --panel-2:#eef0f3;
+    --line:#e0e3e8;
+    --line-soft:#e6e9ee;
+    --text:#1a1d23;
+    --text-dim:#5c6472;
+    --text-faint:#9aa1ac;
+    --teal:#0f9c8c;
+    --teal-dim:#d9f4f0;
+    --teal-soft:rgba(15,156,140,0.14);
+    --danger:#dc2626;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%; overflow:hidden;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Space Grotesk', sans-serif;
+    -webkit-font-smoothing:antialiased;
+    height:100vh;
+    height:100dvh;
+  }
+
+  .stage{
+    height:100vh;
+    height:100dvh;
+    width:100%;
+    display:grid;
+    grid-template-columns:1fr min(460px, 42%);
+    overflow:hidden;
+  }
+
+  /* ===== Left: identity panel ===== */
+  .side{
+    position:relative;
+    padding:clamp(16px, 5vh, 40px) clamp(20px, 3.5vw, 40px);
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    gap:clamp(8px, 2.5vh, 24px);
+    background:
+      radial-gradient(620px 460px at 14% 8%, var(--teal-soft), transparent 62%),
+      radial-gradient(520px 420px at 88% 92%, var(--amber-glow), transparent 60%),
+      var(--panel);
+    border-right:1px solid var(--line);
+    overflow:hidden;
+    min-height:0;
+  }
+  .side::before{
+    content:"";
+    position:absolute; inset:0;
+    background-image:radial-gradient(circle, rgba(255,255,255,0.045) 1px, transparent 1px);
+    background-size:26px 26px;
+    -webkit-mask-image:radial-gradient(circle at 20% 15%, black, transparent 70%);
+    mask-image:radial-gradient(circle at 20% 15%, black, transparent 70%);
+    pointer-events:none;
+  }
+  .ring{
+    position:absolute; border-radius:50%; border:1px solid var(--line);
+    pointer-events:none;
+  }
+  .ring.r1{ width:420px; height:420px; right:-130px; bottom:-140px; }
+  .ring.r2{ width:260px; height:260px; right:-50px; bottom:-50px; }
+
+  .brand{
+    display:flex; align-items:center; gap:10px;
+    font-weight:700; font-size:16px; position:relative; z-index:1;
+  }
+  .brand .dot{
+    width:9px; height:9px; border-radius:50%;
+    background:var(--teal);
+    box-shadow:0 0 0 3px var(--teal-dim);
+  }
+  .top-row{
+    display:flex; align-items:center; justify-content:space-between;
+    position:relative; z-index:1;
+  }
+  .theme-toggle-btn{
+    width:32px; height:32px;
+    border-radius:8px;
+    border:1px solid var(--line);
+    background:var(--panel-2);
+    color:var(--text-dim);
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+  }
+  .theme-toggle-btn svg{width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:1.8;}
+  .theme-toggle-btn:hover{color:var(--teal); border-color:#2a6b62;}
+  .theme-toggle-btn .icon-sun{display:none;}
+  html[data-theme="light"] .theme-toggle-btn .icon-moon{display:none;}
+  html[data-theme="light"] .theme-toggle-btn .icon-sun{display:block;}
+
+  .pitch{ position:relative; z-index:1; max-width:400px; }
+  .pitch .eyebrow{
+    font-family:'JetBrains Mono';
+    font-size:11px; letter-spacing:0.1em; text-transform:uppercase;
+    color:var(--teal); margin-bottom:16px;
+    display:flex; align-items:center; gap:8px;
+  }
+  .pitch .eyebrow::before{
+    content:""; width:16px; height:1px; background:var(--teal); opacity:0.6;
+  }
+  .pitch h1{
+    font-size:clamp(19px, 3.6vh, 33px); line-height:1.22; font-weight:700; letter-spacing:-0.015em;
+  }
+  .pitch p{
+    margin-top:clamp(6px, 1.6vh, 14px); font-size:13.5px; color:var(--text-dim); line-height:1.55;
+    max-width:340px;
+  }
+
+  /* ===== Signature: cangkir beruap ===== */
+  .mug-wrap{
+    position:absolute; right:26px; bottom:clamp(60px, 14vh, 92px); z-index:0;
+    width:clamp(110px, 18vh, 190px); height:clamp(110px, 18vh, 190px);
+    opacity:0.9;
+  }
+  .mug-wrap svg{ width:100%; height:100%; overflow:visible; }
+  .steam{ stroke:var(--teal); stroke-width:2.4; fill:none; stroke-linecap:round; opacity:0; transform-origin:bottom center; }
+  .steam.s1{ animation:rise 3.4s ease-in-out infinite; }
+  .steam.s2{ animation:rise 3.4s ease-in-out infinite 0.9s; }
+  .steam.s3{ animation:rise 3.4s ease-in-out infinite 1.8s; }
+  @keyframes rise{
+    0%{ opacity:0; transform:translateY(0) scaleY(0.85); }
+    18%{ opacity:0.55; }
+    75%{ opacity:0; }
+    100%{ opacity:0; transform:translateY(-22px) scaleY(1.1); }
+  }
+  .mug-body{ fill:var(--panel-2); stroke:var(--line); stroke-width:1.4; }
+  .mug-liquid{ fill:var(--teal-dim); }
+  .mug-handle{ fill:none; stroke:var(--line); stroke-width:1.4; }
+
+  .clock-strip{
+    position:relative; z-index:1;
+    display:flex; align-items:baseline; gap:10px;
+    font-family:'JetBrains Mono';
+  }
+  .clock-strip .time{ font-size:26px; font-weight:600; letter-spacing:-0.02em; }
+  .clock-strip .date{ font-size:12px; color:var(--text-faint); }
+
+  /* ===== Right: login card ===== */
+  .panel{
+    display:flex; flex-direction:column; justify-content:center;
+    padding:clamp(14px, 4vh, 44px) clamp(20px, 3.5vw, 48px);
+    overflow:hidden;
+    min-height:0;
+    background:var(--bg);
+  }
+  .panel h2{ font-size:clamp(17px, 2.6vh, 20px); font-weight:700; letter-spacing:-0.01em; }
+  .panel .sub{ font-size:12.5px; color:var(--text-dim); margin-top:4px; margin-bottom:clamp(12px, 2.6vh, 26px); }
+
+  .role-label{
+    font-size:11px; color:var(--text-faint); text-transform:uppercase;
+    letter-spacing:0.08em; margin-bottom:clamp(6px, 1.4vh, 10px); font-weight:600;
+  }
+  .roles{
+    display:grid;
+    grid-template-columns:repeat(2, 1fr);
+    gap:9px;
+    margin-bottom:clamp(10px, 2.4vh, 22px);
+  }
+  .role{
+    position:relative;
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    border-radius:11px;
+    padding:clamp(9px, 1.8vh, 15px) 8px clamp(7px, 1.4vh, 12px);
+    display:flex; flex-direction:column; align-items:center; gap:6px;
+    cursor:pointer;
+    color:var(--text-dim);
+    transition:border-color .18s ease, background .18s ease, color .18s ease, transform .12s ease;
+  }
+  .role:hover{ border-color:#3a4152; color:var(--text); transform:translateY(-1px); }
+  .role:active{ transform:translateY(0); }
+  .role svg{ width:19px; height:19px; stroke:currentColor; fill:none; stroke-width:1.7; }
+  .role span{ font-size:11.5px; font-weight:600; }
+  .role.active{
+    background:var(--teal-dim);
+    border-color:#2a6b62;
+    color:var(--teal);
+  }
+  .role.active::after{
+    content:"";
+    position:absolute; top:8px; right:8px;
+    width:6px; height:6px; border-radius:50%;
+    background:var(--teal);
+    box-shadow:0 0 0 3px var(--teal-soft);
+  }
+  .role:focus-visible{ outline:2px solid var(--teal); outline-offset:2px; }
+
+  .field{ margin-bottom:clamp(8px, 1.8vh, 16px); }
+  .field label{
+    display:block; font-size:11.5px; color:var(--text-dim); margin-bottom:5px; font-weight:500;
+  }
+  .field .input-wrap{ position:relative; }
+  .field input{
+    width:100%;
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    border-radius:9px;
+    padding:clamp(9px, 1.8vh, 12px) 14px clamp(9px, 1.8vh, 12px) 38px;
+    color:var(--text);
+    font-family:inherit;
+    font-size:13.5px;
+    outline:none;
+    transition:border-color .16s ease, box-shadow .16s ease;
+  }
+  .field input:focus{ border-color:var(--teal); box-shadow:0 0 0 3px var(--teal-soft); }
+  .field input::placeholder{ color:var(--text-faint); }
+  .field svg{
+    position:absolute; left:13px; top:50%; transform:translateY(-50%);
+    width:15px; height:15px; stroke:var(--text-faint); fill:none; stroke-width:1.7;
+    pointer-events:none;
+  }
+
+  /* PIN dots display */
+  .pin-row{
+    display:flex; gap:10px; margin-bottom:clamp(10px, 2vh, 18px);
+  }
+  .pin-dot{
+    width:100%; height:5px; border-radius:5px;
+    background:var(--line);
+    transition:background .16s ease, transform .16s ease;
+    transform:scaleY(1);
+  }
+  .pin-dot.filled{ background:var(--teal); transform:scaleY(1.3); }
+
+  .keypad{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:clamp(5px, 1vh, 8px);
+    margin-bottom:clamp(10px, 2.2vh, 20px);
+  }
+  .key{
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    border-radius:9px;
+    padding:clamp(8px, 1.7vh, 13px) 0;
+    text-align:center;
+    font-family:'JetBrains Mono';
+    font-size:15px;
+    font-weight:500;
+    cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+    user-select:none;
+    transition:border-color .12s ease, background .12s ease, transform .08s ease;
+  }
+  .key:hover{ border-color:#414a5c; }
+  .key:active{ transform:scale(0.94); background:var(--teal-dim); border-color:#2a6b62; }
+  .key:focus-visible{ outline:2px solid var(--teal); outline-offset:1px; }
+  .key.func{
+    color:var(--text-faint);
+    font-family:'Space Grotesk';
+    font-size:11.5px;
+    font-weight:600;
+  }
+
+  .submit{
+    width:100%;
+    padding:clamp(10px, 2vh, 13.5px);
+    border-radius:10px;
+    border:none;
+    background:var(--teal);
+    color:var(--teal-deep);
+    font-family:inherit;
+    font-size:14px;
+    font-weight:700;
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    transition:filter .15s ease, transform .1s ease, box-shadow .15s ease;
+    box-shadow:0 8px 24px -8px rgba(45,212,191,0.45);
+  }
+  .submit svg{ width:15px; height:15px; stroke:var(--teal-deep); fill:none; stroke-width:2.2; transition:transform .18s ease; }
+  .submit:hover:not(:disabled){ filter:brightness(1.08); }
+  .submit:hover:not(:disabled) svg{ transform:translateX(3px); }
+  .submit:active:not(:disabled){ transform:translateY(1px); }
+  .submit:focus-visible{ outline:2px solid var(--text); outline-offset:2px; }
+  .submit:disabled{ opacity:0.6; cursor:not-allowed; box-shadow:none; }
+
+  .footnote{
+    text-align:center; margin-top:clamp(8px, 1.8vh, 16px); font-size:11px; color:var(--text-faint);
+  }
+  .error-msg{
+    display:none;
+    background:rgba(239,68,68,0.1);
+    border:1px solid rgba(239,68,68,0.3);
+    color:var(--danger);
+    font-size:12px;
+    padding:8px 12px;
+    border-radius:8px;
+    margin-bottom:clamp(8px, 1.6vh, 16px);
+  }
+  .error-msg.shake{ animation:shake .32s ease; }
+  @keyframes shake{
+    0%,100%{ transform:translateX(0); }
+    25%{ transform:translateX(-5px); }
+    75%{ transform:translateX(5px); }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .steam, .error-msg.shake{ animation:none !important; }
+    .role, .key, .submit, .pin-dot, .field input{ transition:none !important; }
+  }
+
+  /* Tablet: kolom kanan menyempit dulu sebelum akhirnya ditumpuk */
+  @media (max-width: 1024px) and (min-width: 741px){
+    .stage{ grid-template-columns:1fr min(400px, 40%); }
+  }
+
+  /* HP dan tablet sempit (potrait): layout ditumpuk. .side jadi header ramping */
+  @media (max-width: 740px){
+    .stage{ grid-template-columns:1fr; grid-template-rows:auto 1fr; }
+    .side{
+      flex-direction:row; align-items:center; justify-content:space-between;
+      padding:14px 20px; gap:12px;
+      border-right:none; border-bottom:1px solid var(--line);
+    }
+    .side::before{ display:none; }
+    .ring{ display:none; }
+    .pitch .eyebrow, .pitch p{ display:none; }
+    .pitch{ flex:1; min-width:0; max-width:none; }
+    .pitch h1{
+      font-size:14px; line-height:1.3;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    .mug-wrap{ display:none; }
+    .top-row{ flex:none; }
+    .clock-strip{ flex:none; flex-direction:column; align-items:flex-end; gap:0; }
+    .clock-strip .time{ font-size:15px; }
+    .clock-strip .date{ font-size:9.5px; }
+    .panel{ padding:14px 22px 18px; justify-content:center; }
+    .panel .sub{ margin-bottom:clamp(8px, 2vh, 16px); }
+  }
+
+  /* HP/tablet sangat pendek (mis. landscape): rapatkan lebih jauh & sembunyikan elemen dekoratif */
+  @media (max-height: 420px){
+    .mug-wrap{ display:none; }
+    .clock-strip{ display:none; }
+    .pitch p{ display:none; }
+    .side{ gap:6px; padding:10px clamp(16px,3vw,32px); }
+    .panel .sub{ display:none; }
+  }
+
+</style>
+</head>
+<body>
+<div class="stage">
+
+  <div class="side">
+    <span class="ring r1"></span>
+    <span class="ring r2"></span>
+
+    <div class="top-row">
+      <div class="brand"><span class="dot"></span>Kedai Tikungan</div>
+      <button class="theme-toggle-btn" id="themeToggleBtn" title="Ganti tampilan terang/gelap">
+        <svg class="icon-moon" viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.5M12 19v2.5M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M2.5 12H5M19 12h2.5M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></svg>
+      </button>
+    </div>
+
+    <div class="pitch">
+      <div class="eyebrow">Sistem Kasir</div>
+      <h1>Masuk dulu sebelum mulai shift.</h1>
+      <p>Pilih peranmu, lalu masukkan PIN kasir untuk membuka laci dan mencatat transaksi hari ini.</p>
+    </div>
+
+    <div class="mug-wrap" aria-hidden="true">
+      <svg viewBox="0 0 120 120">
+        <path class="steam s1" d="M46 46c-6 8 6 10 0 18" />
+        <path class="steam s2" d="M60 42c-6 8 6 10 0 18" />
+        <path class="steam s3" d="M74 46c-6 8 6 10 0 18" />
+        <path class="mug-handle" d="M88 62h6a10 10 0 0 1 0 20h-6" />
+        <path class="mug-body" d="M30 58h58l-4 30a10 10 0 0 1-10 9H44a10 10 0 0 1-10-9l-4-30z" />
+        <path class="mug-liquid" d="M34 62h50l-1.4 8H35.4z" />
+      </svg>
+    </div>
+
+    <div class="clock-strip">
+      <span class="time" id="jam">10:24</span>
+      <span class="date">Jumat, 3 Juli 2026</span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Selamat datang kembali</h2>
+    <div class="sub">Pilih peran dan masukkan PIN 4 digit</div>
+
+    <div class="role-label">Peran</div>
+    <div class="roles" id="roles">
+      <div class="role active" data-role="Pemilik">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6"/><path d="M15 3.5a3.2 3.2 0 0 1 0 6"/></svg>
+        <span>Pemilik</span>
+      </div>
+      <div class="role" data-role="Kasir">
+        <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+        <span>Kasir</span>
+      </div>
+    </div>
+
+    <div class="error-msg" id="errorMsg"></div>
+
+    <div class="field">
+      <label for="nama">Nama pengguna</label>
+      <div class="input-wrap">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6"/></svg>
+        <input id="nama" type="text" placeholder="MASUKAN ID" autocomplete="off">
+      </div>
+    </div>
+
+    <div class="field" style="margin-bottom:10px;">
+      <label>PIN</label>
+      <div class="pin-row" id="pinRow">
+        <div class="pin-dot"></div>
+        <div class="pin-dot"></div>
+        <div class="pin-dot"></div>
+        <div class="pin-dot"></div>
+      </div>
+    </div>
+
+    <div class="keypad" id="keypad">
+      <div class="key" data-key="1">1</div><div class="key" data-key="2">2</div><div class="key" data-key="3">3</div>
+      <div class="key" data-key="4">4</div><div class="key" data-key="5">5</div><div class="key" data-key="6">6</div>
+      <div class="key" data-key="7">7</div><div class="key" data-key="8">8</div><div class="key" data-key="9">9</div>
+      <div class="key func" data-key="clear">Hapus</div><div class="key" data-key="0">0</div><div class="key func" data-key="back">⌫</div>
+    </div>
+
+    <button class="submit" id="submitBtn">
+      <svg viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l5-5-5-5"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+      <span id="submitLabel">Masuk sebagai Pemilik</span>
+    </button>
+
+    <div class="footnote">Lupa PIN? Hubungi supervisor untuk reset.</div>
+  </div>
+
+</div>
+
+<script>
+  const SUPABASE_URL = 'https://czfmorumcnnjberlcnda.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_b7BUED-Pe3Z4z5CPv3_wSg_GI4mRjUj';
+  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const AUTH_STORAGE_KEY = 'pos_kasir_auth';
+  const TAB_MARKER = 'pos_kasir_tab_active';
+
+  /* Pemilik dibawa ke halaman Pemilik, Kasir dibawa ke halaman Karyawan/Kasir */
+  function landingPageForRole(role){
+    return String(role).toLowerCase() === 'pemilik' ? 'pemilik.html' : 'karyawan-kasir.html';
+  }
+
+  function updateClock(){
+    const now = new Date();
+    const h = String(now.getHours()).padStart(2,'0');
+    const m = String(now.getMinutes()).padStart(2,'0');
+    document.getElementById('jam').textContent = h + ':' + m;
+  }
+  updateClock();
+  setInterval(updateClock, 1000*30);
+
+  /* ===== Toggle tema terang/gelap ===== */
+  document.getElementById('themeToggleBtn').addEventListener('click', ()=>{
+    const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+    if(isLight){
+      document.documentElement.removeAttribute('data-theme');
+      localStorage.setItem('pos_kasir_theme', 'dark');
+    } else {
+      document.documentElement.setAttribute('data-theme', 'light');
+      localStorage.setItem('pos_kasir_theme', 'light');
+    }
+  });
+
+  /* ===== Deteksi tab/browser baru =====
+     window.name bertahan selama tab yang sama masih terbuka (termasuk saat
+     pindah halaman), tapi otomatis kosong lagi kalau tab/browser ditutup
+     lalu dibuka lagi. Kalau ada sesi login tersimpan tapi tab ini "baru",
+     anggap sesi basi dan hapus. */
+  if(window.name !== TAB_MARKER){
+    localStorage.removeItem(AUTH_STORAGE_KEY);
+  }
+
+  /* ===== Kalau sudah pernah login (di tab yang sama), langsung lempar ke halaman sesuai peran ===== */
+  (function(){
+    const savedAuthRaw = localStorage.getItem(AUTH_STORAGE_KEY);
+    if(savedAuthRaw){
+      window.name = TAB_MARKER;
+      let savedRole = '';
+      try{ savedRole = JSON.parse(savedAuthRaw).role || ''; }catch(e){}
+      window.location.href = landingPageForRole(savedRole);
+    }
+  })();
+
+  /* ===== Pilih peran ===== */
+  let selectedRole = 'Pemilik';
+  const roles = document.querySelectorAll('.role');
+  const submitLabel = document.getElementById('submitLabel');
+  roles.forEach(r => {
+    r.addEventListener('click', () => {
+      roles.forEach(x => x.classList.remove('active'));
+      r.classList.add('active');
+      selectedRole = r.dataset.role;
+      submitLabel.textContent = 'Masuk sebagai ' + selectedRole;
+      hideError();
+    });
+  });
+
+  /* ===== Keypad PIN ===== */
+  let pin = '';
+  const pinDots = document.querySelectorAll('.pin-dot');
+
+  function renderPin(){
+    pinDots.forEach((dot, i) => dot.classList.toggle('filled', i < pin.length));
+  }
+
+  document.getElementById('keypad').addEventListener('click', (e)=>{
+    const key = e.target.closest('.key');
+    if(!key) return;
+    const val = key.dataset.key;
+    hideError();
+    if(val === 'clear'){
+      pin = '';
+    } else if(val === 'back'){
+      pin = pin.slice(0, -1);
+    } else if(pin.length < 4){
+      pin += val;
+    }
+    renderPin();
+  });
+
+  /* ===== Pesan error ===== */
+  const errorMsg = document.getElementById('errorMsg');
+  function showError(msg){
+    errorMsg.textContent = msg;
+    errorMsg.style.display = 'block';
+    errorMsg.classList.remove('shake');
+    void errorMsg.offsetWidth; // reset animasi
+    errorMsg.classList.add('shake');
+  }
+  function hideError(){
+    errorMsg.style.display = 'none';
+  }
+
+  /* ===== Proses login ===== */
+  const submitBtn = document.getElementById('submitBtn');
+  const namaInput = document.getElementById('nama');
+
+  submitBtn.addEventListener('click', async ()=>{
+    const nama = namaInput.value.trim();
+    if(!nama){
+      showError('Masukkan nama pengguna terlebih dahulu.');
+      return;
+    }
+    if(pin.length < 4){
+      showError('PIN harus 4 digit.');
+      return;
+    }
+
+    submitBtn.disabled = true;
+    const originalLabel = submitLabel.textContent;
+    submitLabel.textContent = 'Memeriksa...';
+
+    const { data, error } = await supabaseClient
+      .from('users')
+      .select('*')
+      .or(`username.eq.${nama},name.eq.${nama}`)
+      .eq('password', pin)
+      .maybeSingle();
+
+    submitBtn.disabled = false;
+    submitLabel.textContent = originalLabel;
+
+    if(error){
+      showError('Gagal menghubungi server: ' + error.message);
+      return;
+    }
+    if(!data){
+      showError('Nama pengguna atau PIN salah.');
+      pin = '';
+      renderPin();
+      return;
+    }
+    if(String(data.role).toLowerCase() !== selectedRole.toLowerCase()){
+      showError(`Akun ini terdaftar sebagai "${data.role}", bukan "${selectedRole}".`);
+      pin = '';
+      renderPin();
+      return;
+    }
+
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({
+      username: data.username,
+      name: data.name || data.username,
+      role: data.role
+    }));
+    window.name = TAB_MARKER;
+    window.location.href = landingPageForRole(data.role);
+  });
+
+  /* Enter di kolom nama langsung fokus submit */
+  namaInput.addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter') submitBtn.click();
+  });
+</script>
+</body>
+</html>

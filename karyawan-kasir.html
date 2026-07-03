@@ -1,0 +1,2297 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kasir — Beranda</title>
+<script>
+  (function(){
+    var saved = localStorage.getItem('pos_kasir_theme');
+    if(saved === 'light'){ document.documentElement.setAttribute('data-theme','light'); }
+  })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  :root{
+    --bg:#111318;
+    --panel:#181b22;
+    --panel-2:#1e222b;
+    --line:#2a2f3a;
+    --text:#eef0f4;
+    --text-dim:#8b93a3;
+    --text-faint:#565e6e;
+    --amber:#2dd4bf;
+    --amber-dim:#1a4a45;
+    --green:#4ade80;
+    --radius:10px;
+  }
+  html[data-theme="light"]{
+    --bg:#f4f5f7;
+    --panel:#ffffff;
+    --panel-2:#eef0f3;
+    --line:#e0e3e8;
+    --text:#1a1d23;
+    --text-dim:#5c6472;
+    --text-faint:#9aa1ac;
+    --amber:#0f9c8c;
+    --amber-dim:#d9f4f0;
+    --green:#15803d;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Space Grotesk', sans-serif;
+    overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{
+    display:grid;
+    grid-template-columns:84px 1fr 340px;
+    grid-template-rows:64px 1fr;
+    height:100vh;
+    width:100vw;
+  }
+
+  /* ===== Top bar ===== */
+  .topbar{
+    grid-column:1 / 4;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 20px;
+    border-bottom:1px solid var(--line);
+    background:var(--panel);
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-weight:700;
+    font-size:16px;
+    letter-spacing:0.2px;
+  }
+  .brand .cash-icon{
+    width:28px; height:28px;
+    border-radius:8px;
+    background:var(--amber-dim);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .brand .cash-icon svg{width:16px; height:16px; stroke:var(--amber); fill:none; stroke-width:1.8;}
+  .search{
+    flex:1;
+    max-width:420px;
+    margin:0 24px;
+    position:relative;
+  }
+  .search input{
+    width:100%;
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:9px 14px 9px 34px;
+    color:var(--text);
+    font-family:inherit;
+    font-size:13.5px;
+    outline:none;
+  }
+  .search input::placeholder{color:var(--text-faint);}
+  .search input:focus{border-color:var(--amber);}
+  .search svg{
+    position:absolute; left:11px; top:50%; transform:translateY(-50%);
+    width:14px; height:14px; stroke:var(--text-faint);
+  }
+  .top-right{
+    display:flex; align-items:center; gap:18px;
+  }
+  .clock{
+    text-align:right;
+    line-height:1.25;
+  }
+  .clock .time{font-family:'JetBrains Mono'; font-size:14px; font-weight:500;}
+  .clock .date{font-size:11px; color:var(--text-dim);}
+  .cashier{
+    display:flex; align-items:center; gap:9px;
+    padding-left:16px;
+    border-left:1px solid var(--line);
+  }
+  .avatar{
+    width:30px; height:30px; border-radius:50%;
+    background:linear-gradient(135deg,#2dd4bf,#0f766e);
+    display:flex; align-items:center; justify-content:center;
+    font-size:12px; font-weight:700; color:#062723;
+  }
+  .cashier .who{line-height:1.2;}
+  .cashier .name{font-size:12.5px; font-weight:600;}
+  .cashier .role{font-size:10.5px; color:var(--text-dim);}
+
+  .settings-btn{
+    width:32px; height:32px;
+    border-radius:8px;
+    border:1px solid var(--line);
+    background:var(--panel-2);
+    color:var(--text-dim);
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+  }
+  .settings-btn svg{width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:1.8;}
+  .settings-btn:hover{color:var(--amber); border-color:#2a6b62;}
+
+  .theme-toggle-btn{
+    width:32px; height:32px;
+    border-radius:8px;
+    border:1px solid var(--line);
+    background:var(--panel-2);
+    color:var(--text-dim);
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+  }
+  .theme-toggle-btn svg{width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:1.8;}
+  .theme-toggle-btn:hover{color:var(--amber); border-color:#2a6b62;}
+  .history-refresh-btn{
+    width:32px; height:32px; border-radius:8px; border:1px solid var(--line);
+    background:var(--panel-2); color:var(--text-dim);
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+    flex-shrink:0;
+  }
+  .history-refresh-btn svg{width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:1.8;}
+  .history-refresh-btn:hover{color:var(--amber); border-color:#2a6b62;}
+  .history-refresh-btn.spinning svg{ animation:spin .6s linear; }
+  @keyframes spin{ from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
+  .theme-toggle-btn .icon-sun{display:none;}
+  html[data-theme="light"] .theme-toggle-btn .icon-moon{display:none;}
+  html[data-theme="light"] .theme-toggle-btn .icon-sun{display:block;}
+
+  /* ===== Modal Pengaturan Akun ===== */
+  .modal-overlay{
+    display:none;
+    position:fixed; inset:0;
+    background:rgba(8,10,14,0.6);
+    align-items:center; justify-content:center;
+    z-index:100;
+  }
+  .modal-overlay.show{display:flex;}
+  .modal-card{
+    width:320px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:20px 20px 18px;
+  }
+  .modal-card h3{font-size:15px; font-weight:700; margin-bottom:4px;}
+  .modal-card .modal-sub{font-size:11.5px; color:var(--text-dim); margin-bottom:16px;}
+  .modal-field{margin-bottom:12px;}
+  .modal-field label{display:block; font-size:11.5px; color:var(--text-dim); margin-bottom:5px; font-weight:500;}
+  .modal-field input{
+    width:100%;
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:10px 12px;
+    color:var(--text);
+    font-family:'JetBrains Mono';
+    font-size:14px;
+    letter-spacing:3px;
+    outline:none;
+  }
+  .modal-field input:focus{border-color:var(--amber);}
+  .modal-error{
+    display:none;
+    font-size:11.5px;
+    color:#f87171;
+    margin-bottom:10px;
+  }
+  .modal-actions{
+    display:flex; gap:8px; margin-top:6px;
+  }
+  .modal-actions button{
+    flex:1;
+    padding:10px;
+    border-radius:8px;
+    font-family:inherit;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .modal-btn-secondary{
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    color:var(--text-dim);
+  }
+  .modal-btn-secondary:hover{color:var(--text);}
+  .modal-btn-primary{
+    background:var(--amber);
+    border:none;
+    color:#062723;
+  }
+  .modal-btn-primary:disabled{opacity:0.6; cursor:not-allowed;}
+
+  /* ===== Modal Metode Pembayaran ===== */
+  .payment-total-box{
+    display:flex; justify-content:space-between; align-items:center;
+    background:var(--panel-2); border:1px solid var(--line); border-radius:10px;
+    padding:12px 14px; margin-bottom:14px; font-size:12.5px; color:var(--text-dim);
+  }
+  .payment-total-box span:last-child{
+    font-size:17px; font-weight:700; color:var(--amber); font-family:'JetBrains Mono';
+  }
+  .payment-tabs{display:flex; gap:8px; margin-bottom:14px;}
+  .payment-tab{
+    flex:1; padding:10px; border-radius:8px; border:1px solid var(--line);
+    background:var(--panel-2); color:var(--text-dim); font-family:inherit;
+    font-size:13px; font-weight:600; cursor:pointer; transition:all .16s ease;
+  }
+  .payment-tab.active{background:var(--amber-dim); border-color:#2a6b62; color:var(--amber);}
+  .cash-quick-buttons{display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 14px;}
+  .cash-quick-btn{
+    padding:7px 12px; border:1px solid var(--line); background:var(--panel-2);
+    border-radius:8px; font-size:12px; font-weight:600; color:var(--amber); cursor:pointer;
+    font-family:'JetBrains Mono'; transition:all .16s ease;
+  }
+  .cash-quick-btn:hover{border-color:var(--amber); background:var(--amber-dim);}
+  .kembalian-row{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:12px 14px; background:rgba(74,222,128,0.08); border:1px solid rgba(74,222,128,0.25);
+    border-radius:10px; font-weight:700; color:var(--green); font-size:14px;
+  }
+  .qris-box{
+    background:var(--panel-2); border:2px dashed var(--line); border-radius:14px; padding:20px 16px;
+  }
+  .qris-pattern{
+    width:180px; height:180px; margin:0 auto; background:#fff; border:1px solid var(--line);
+    border-radius:10px; display:flex; align-items:center; justify-content:center; padding:8px;
+    font-size:13px; color:#999;
+  }
+  .qris-pattern img{width:100%; height:100%; image-rendering:pixelated;}
+  .qris-merchant-name{font-size:12.5px; font-weight:700; color:var(--text); margin-top:10px;}
+
+  /* ===== Modal Hubungkan Printer ===== */
+  .printer-connect-btn{
+    width:calc(100% - 36px);
+    margin:0 18px 8px;
+    padding:11px;
+    border-radius:9px;
+    border:1px solid var(--line);
+    background:var(--panel-2);
+    color:var(--text-dim);
+    font-family:inherit;
+    font-size:12.5px;
+    font-weight:600;
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center; gap:7px;
+    transition:border-color .12s ease, color .12s ease, background .12s ease;
+  }
+  .printer-connect-btn:hover{border-color:#2a6b62; color:var(--text);}
+  .printer-connect-btn.connected{
+    border-color:#2a6b62;
+    background:var(--amber-dim);
+    color:var(--amber);
+  }
+  .loss-btn{
+    width:calc(100% - 36px);
+    margin:0 18px 8px;
+    padding:11px;
+    border-radius:9px;
+    border:1px solid #5a2b2b;
+    background:var(--panel-2);
+    color:#f87171;
+    font-family:inherit;
+    font-size:12.5px;
+    font-weight:600;
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center; gap:7px;
+    transition:border-color .12s ease, color .12s ease, background .12s ease;
+  }
+  .loss-btn:hover{background:rgba(248,113,113,0.1); border-color:#f87171;}
+  .loss-item-row{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:8px 0; border-bottom:1px solid var(--line);
+    font-size:12.5px;
+  }
+  .loss-item-row:last-child{border-bottom:none;}
+  .loss-item-row .n{color:var(--text);}
+  .loss-item-row .q{color:var(--text-dim); font-family:'JetBrains Mono'; font-size:11.5px;}
+  .loss-total-box{
+    display:flex; justify-content:space-between; align-items:center;
+    background:var(--panel-2); border:1px solid #5a2b2b; border-radius:10px;
+    padding:12px 14px; margin:12px 0 14px; font-size:12.5px; color:var(--text-dim);
+  }
+  .loss-total-box span:last-child{
+    font-size:17px; font-weight:700; color:#f87171; font-family:'JetBrains Mono';
+  }
+  .loss-hint{font-size:11px; color:var(--text-faint); margin:-4px 0 14px; line-height:1.5;}
+  /* ===== Modal Pilih Addon ===== */
+  .addon-modal-product{
+    display:flex; align-items:center; gap:10px; background:var(--panel-2);
+    border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin-bottom:14px;
+  }
+  .addon-modal-product .em{font-size:22px;}
+  .addon-modal-product .nm{font-size:13px; font-weight:600;}
+  .addon-modal-product .pr{font-size:11.5px; color:var(--text-dim); font-family:'JetBrains Mono';}
+  .addon-check-group{ display:flex; flex-direction:column; gap:8px; margin-bottom:14px; }
+  .addon-check{
+    display:flex; align-items:center; gap:9px; padding:10px 12px; border-radius:9px;
+    border:1px solid var(--line); background:var(--panel-2); cursor:pointer; font-size:13px; font-weight:500;
+  }
+  .addon-check:hover{border-color:#414a5c;}
+  .addon-check input[type="checkbox"]{ width:16px; height:16px; accent-color:var(--amber); cursor:pointer; }
+  .addon-check .addon-price{ margin-left:auto; font-family:'JetBrains Mono'; font-size:11.5px; color:var(--text-dim); }
+  .addon-qty-row{
+    display:flex; align-items:center; justify-content:space-between;
+    background:var(--panel-2); border:1px solid var(--line); border-radius:9px;
+    padding:8px 10px; margin-bottom:14px;
+  }
+  .addon-qty-row .lbl{font-size:12px; color:var(--text-dim); font-weight:600;}
+  .addon-qty-ctrl{display:flex; align-items:center; gap:10px;}
+  .addon-qty-ctrl button{
+    width:28px; height:28px; border-radius:7px; border:1px solid var(--line);
+    background:var(--panel); color:var(--text); font-size:15px; font-weight:700; cursor:pointer;
+  }
+  .addon-qty-ctrl button:hover{border-color:var(--amber); color:var(--amber);}
+  .addon-qty-ctrl span{font-family:'JetBrains Mono'; font-size:13px; min-width:16px; text-align:center;}
+  .addon-modal-total{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:11px 13px; background:var(--amber-dim); border-radius:10px;
+    font-size:12.5px; color:var(--text-dim); margin-bottom:14px;
+  }
+  .addon-modal-total span:last-child{font-size:15px; font-weight:700; color:var(--amber); font-family:'JetBrains Mono';}
+  .cart-row .addon-badges{display:flex; gap:4px; flex-wrap:wrap; margin-top:3px;}
+  .cart-row .addon-badge{
+    font-size:9.5px; font-weight:600; padding:1px 6px; border-radius:20px;
+    background:var(--amber-dim); color:var(--amber);
+  }
+  .item .addon-flag{
+    position:absolute; top:6px; right:6px; font-size:9px; font-weight:700;
+    background:var(--amber-dim); color:var(--amber); padding:2px 6px; border-radius:20px;
+  }
+  .modal-field select, .modal-field textarea{
+    width:100%;
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:10px 12px;
+    color:var(--text);
+    font-family:inherit;
+    font-size:13px;
+    outline:none;
+    resize:vertical;
+  }
+  .modal-field select:focus, .modal-field textarea:focus{border-color:var(--amber);}
+
+  .printer-list{display:flex; flex-direction:column; gap:8px; margin-bottom:8px;}
+  .printer-option{
+    display:flex; align-items:center; gap:10px;
+    padding:10px 12px;
+    border:1px solid var(--line);
+    border-radius:9px;
+    cursor:pointer;
+  }
+  .printer-option:hover{border-color:#414a5c;}
+  .printer-option.active{border-color:#2a6b62; background:var(--amber-dim);}
+  .printer-option-icon{font-size:18px;}
+  .printer-option-info{flex:1; min-width:0;}
+  .printer-option-name{font-size:12.5px; font-weight:600; color:var(--text);}
+  .printer-option-type{font-size:10.5px; color:var(--text-faint);}
+  .printer-option-status{font-size:10.5px; font-weight:700; color:var(--green);}
+  .printer-connecting{
+    display:none;
+    text-align:center; padding:8px;
+    font-size:12px; color:var(--amber); font-weight:600;
+  }
+  .printer-message{
+    display:none;
+    padding:9px 12px;
+    border-radius:8px;
+    font-size:11.5px;
+    font-weight:600;
+    margin-bottom:8px;
+    line-height:1.5;
+  }
+  .printer-message.success{background:rgba(74,222,128,0.12); color:var(--green); border:1px solid rgba(74,222,128,0.3);}
+  .printer-message.error{background:rgba(248,113,113,0.12); color:#f87171; border:1px solid rgba(248,113,113,0.3);}
+  .printer-unsupported{font-size:11px; color:#f87171; margin-top:6px; line-height:1.5;}
+
+
+  /* ===== Sidebar navigasi (kiri) ===== */
+  .rail{
+    border-right:1px solid var(--line);
+    background:var(--panel);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:14px 0;
+    gap:6px;
+  }
+  .rail-btn{
+    width:60px;
+    padding:10px 4px 8px;
+    border-radius:10px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:5px;
+    cursor:pointer;
+    color:var(--text-dim);
+    background:transparent;
+    border:1px solid transparent;
+  }
+  .rail-btn svg{width:19px; height:19px; stroke:currentColor; fill:none; stroke-width:1.7;}
+  .rail-btn span{font-size:10px; font-weight:500; text-align:center; line-height:1.15;}
+  .rail-btn.active{
+    background:var(--amber-dim);
+    color:var(--amber);
+    border-color:#2a6b62;
+  }
+  .rail-btn:not(.active):hover{ color:var(--text); }
+
+  /* ===== Halaman Riwayat (full page) ===== */
+  .history-view{
+    display:none;
+    grid-column:2 / 4;
+    overflow-y:auto;
+    padding:18px 20px 20px;
+  }
+  .history-view.active{display:block;}
+  .history-view-head{
+    display:flex; align-items:baseline; justify-content:space-between;
+    margin-bottom:14px;
+  }
+  .history-view-head h1{font-size:16px; font-weight:600;}
+  .history-view-head .count{font-size:12px; color:var(--text-faint);}
+  .trx-groups{
+    display:flex;
+    flex-direction:column;
+    gap:24px;
+  }
+  .trx-group-head{
+    display:flex; align-items:baseline; justify-content:space-between;
+    padding-bottom:8px;
+    margin-bottom:12px;
+    border-bottom:1px solid var(--line);
+  }
+  .trx-group-title{
+    font-size:12.5px; font-weight:700; letter-spacing:0.03em;
+    color:var(--amber);
+  }
+  .trx-group-count{font-size:11px; color:var(--text-faint);}
+  .trx-grid{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:12px;
+  }
+  .trx-empty{
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:70px 20px; color:var(--text-faint); text-align:center; gap:10px;
+    grid-column:1 / -1;
+  }
+  .trx-empty svg{width:38px; height:38px; stroke:var(--text-faint); fill:none; stroke-width:1.4;}
+  .trx-empty .t{font-size:13px; color:var(--text-dim); font-weight:500;}
+  .trx-card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:14px 15px;
+  }
+  .trx-card-head{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:9px;
+    gap:6px;
+  }
+  .trx-id{font-size:12.5px; font-weight:700; font-family:'JetBrains Mono';}
+  .trx-time{font-size:10.5px; color:var(--text-faint);}
+  .trx-method{
+    font-size:10px; font-weight:600;
+    padding:3px 9px; border-radius:20px;
+    background:var(--amber-dim); color:var(--amber);
+    white-space:nowrap;
+  }
+  .trx-items{font-size:11.5px; color:var(--text-dim); line-height:1.6; margin-bottom:9px;}
+  .trx-total{
+    display:flex; justify-content:space-between;
+    font-size:13.5px; font-weight:700;
+    padding-top:9px; border-top:1px solid var(--line);
+  }
+  .trx-total .v{font-family:'JetBrains Mono'; color:var(--amber);}
+
+  /* ===== Product grid ===== */
+  .catalog{
+    padding:18px 20px 20px;
+    overflow-y:auto;
+  }
+  .catalog-head{
+    display:flex; align-items:baseline; justify-content:space-between;
+    margin-bottom:14px;
+  }
+  .catalog-head h1{font-size:16px; font-weight:600;}
+  .catalog-head .count{font-size:12px; color:var(--text-faint);}
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    gap:12px;
+  }
+  .item{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:12px;
+    cursor:pointer;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    transition:border-color .12s ease;
+    position:relative;
+  }
+  .item:hover{border-color:#414a5c;}
+  .item .thumb{
+    height:64px;
+    border-radius:7px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:22px;
+    background:var(--panel-2);
+  }
+  .item .name{font-size:13px; font-weight:600; line-height:1.25;}
+  .item .meta{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-top:auto;
+  }
+  .item .price{font-family:'JetBrains Mono'; font-size:12.5px; color:var(--amber); font-weight:500;}
+  .item .stock{font-size:10px; color:var(--text-faint);}
+
+  .item.out{opacity:0.4; cursor:not-allowed;}
+  .item.in-cart{border-color:var(--amber);}
+  .item .in-cart-badge{
+    position:relative;
+  }
+
+  /* ===== Cart panel ===== */
+  .cart{
+    border-left:1px solid var(--line);
+    background:var(--panel);
+    display:flex;
+    flex-direction:column;
+  }
+  .cart-head{
+    padding:16px 18px 12px;
+    border-bottom:1px dashed var(--line);
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .cart-head h2{font-size:14px; font-weight:600;}
+  .cart-head .badge{
+    font-size:11px; color:#062723; background:var(--amber);
+    padding:4px 22px 4px 10px; border-radius:20px; font-weight:600;
+    border:none; font-family:inherit; cursor:pointer;
+    appearance:none; -webkit-appearance:none; -moz-appearance:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23062723' stroke-width='2.5'><path d='M6 9l6 6 6-6'/></svg>");
+    background-repeat:no-repeat;
+    background-position:right 6px center;
+    background-size:11px;
+  }
+  .cart-head .badge:focus{outline:2px solid var(--amber-dim);}
+  .cart-list{
+    flex:1;
+    overflow-y:auto;
+    padding:6px 18px;
+  }
+  .cart-row{
+    display:flex; align-items:center; gap:10px;
+    padding:11px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .qty-ctrl{
+    display:flex; align-items:center; gap:5px;
+  }
+  .qty-ctrl button{
+    width:20px; height:20px;
+    border-radius:5px;
+    border:1px solid var(--line);
+    background:var(--panel-2);
+    color:var(--text-dim);
+    font-family:'JetBrains Mono';
+    font-size:12px;
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    line-height:1;
+  }
+  .qty-ctrl button:hover{color:var(--amber); border-color:#2a6b62;}
+  .cart-row .qty{
+    font-family:'JetBrains Mono';
+    font-size:11.5px;
+    color:var(--text-dim);
+    background:var(--panel-2);
+    border-radius:6px;
+    padding:2px 6px;
+    min-width:22px;
+    text-align:center;
+  }
+  .cart-row .info{flex:1; min-width:0;}
+  .cart-row .info .n{font-size:12.5px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .cart-row .info .p{font-size:10.5px; color:var(--text-faint); font-family:'JetBrains Mono';}
+  .cart-row .sub{font-family:'JetBrains Mono'; font-size:12.5px; font-weight:500; min-width:64px; text-align:right;}
+  .cart-row .del{
+    width:20px; height:20px;
+    border:none; background:none; cursor:pointer;
+    color:var(--text-faint);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .cart-row .del:hover{color:#f87171;}
+  .cart-row .del svg{width:14px; height:14px; stroke:currentColor; fill:none; stroke-width:1.8;}
+
+  .cart-empty{
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    height:100%; color:var(--text-faint); text-align:center; gap:10px; padding:20px;
+  }
+  .cart-empty svg{width:34px; height:34px; stroke:var(--text-faint); fill:none; stroke-width:1.4;}
+  .cart-empty .t{font-size:12.5px; color:var(--text-dim); font-weight:500;}
+  .cart-empty .s{font-size:11px;}
+
+  .toast{
+    position:fixed;
+    bottom:24px; left:50%;
+    transform:translateX(-50%) translateY(20px);
+    background:var(--panel-2);
+    border:1px solid var(--amber);
+    color:var(--text);
+    padding:12px 22px;
+    border-radius:10px;
+    font-size:13px;
+    font-weight:600;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .2s ease, transform .2s ease;
+    z-index:50;
+    display:flex; align-items:center; gap:8px;
+  }
+  .toast svg{width:16px; height:16px; stroke:var(--amber); fill:none; stroke-width:2;}
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  .cart-summary{
+    padding:14px 18px;
+    border-top:1px dashed var(--line);
+    display:flex; flex-direction:column; gap:7px;
+  }
+  .sum-row{display:flex; justify-content:space-between; font-size:12px; color:var(--text-dim);}
+  .sum-row.total{
+    font-size:15px; font-weight:700; color:var(--text);
+    padding-top:8px; margin-top:2px; border-top:1px solid var(--line);
+  }
+  .sum-row.total .v{font-family:'JetBrains Mono'; color:var(--amber);}
+  .sum-row .v{font-family:'JetBrains Mono';}
+
+  .pay-btn{
+    margin:10px 18px 16px;
+    padding:13px;
+    border-radius:10px;
+    border:none;
+    background:var(--amber);
+    color:#062723;
+    font-family:inherit;
+    font-size:14px;
+    font-weight:700;
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+  }
+  .pay-btn svg{width:16px; height:16px; stroke:#062723; fill:none; stroke-width:2;}
+
+  ::-webkit-scrollbar{width:8px; height:8px;}
+  ::-webkit-scrollbar-thumb{background:var(--line); border-radius:8px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <div class="brand">
+      <span class="cash-icon">
+        <svg viewBox="0 0 24 24"><path d="M4 8h16l-1.2 9.2a2 2 0 0 1-2 1.8H7.2a2 2 0 0 1-2-1.8L4 8z"/><path d="M8 8V6a4 4 0 0 1 8 0v2"/><rect x="9.5" y="11.5" width="5" height="4" rx="0.5"/><line x1="6.5" y1="4" x2="4" y2="8"/><line x1="17.5" y1="4" x2="20" y2="8"/></svg>
+      </span>
+      Kedai Tikungan
+    </div>
+    <div class="search">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="searchInput" placeholder="Cari produk atau pindai barcode...">
+    </div>
+    <div class="top-right">
+      <div class="clock">
+        <div class="time" id="jam">10:24</div>
+        <div class="date">Jumat, 3 Jul 2026</div>
+      </div>
+      <button class="theme-toggle-btn" id="themeToggleBtn" title="Ganti tampilan terang/gelap">
+        <svg class="icon-moon" viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.5M12 19v2.5M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M2.5 12H5M19 12h2.5M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></svg>
+      </button>
+      <button class="settings-btn" id="settingsBtn" title="Pengaturan akun">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 13.5a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V19.7a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H2.3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1A2 2 0 1 1 6.4 4l.1.1a1.7 1.7 0 0 0 1.9.3H8.5a1.7 1.7 0 0 0 1-1.6V2.3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V8.5a1.7 1.7 0 0 0 1.6 1H21.7a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.6 1z"/></svg>
+      </button>
+      <div class="cashier" id="cashierBox" title="Klik untuk ganti kasir" style="cursor:pointer;">
+        <div class="avatar" id="cashierAvatar">?</div>
+        <div class="who">
+          <div class="name" id="cashierName">Pilih Kasir</div>
+          <div class="role">Klik untuk ganti</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="rail">
+    <div class="rail-btn active" id="navKasir">
+      <svg viewBox="0 0 24 24"><path d="M4 8h16l-1.2 9.2a2 2 0 0 1-2 1.8H7.2a2 2 0 0 1-2-1.8L4 8z"/><path d="M8 8V6a4 4 0 0 1 8 0v2"/></svg>
+      <span>Kasir</span>
+    </div>
+    <div class="rail-btn" id="navRiwayat">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>
+      <span>Riwayat</span>
+    </div>
+  </div>
+
+  <div class="catalog" id="kasirCatalog">
+    <div class="catalog-head">
+      <h1 id="catalogTitle">Semua Produk</h1>
+      <span class="count" id="itemCount">0 item</span>
+    </div>
+    <div class="grid" id="grid"></div>
+    <div class="no-result" id="noResult" style="display:none; text-align:center; padding:40px; color:var(--text-faint); font-size:13px;">Produk tidak ditemukan.</div>
+  </div>
+
+  <div class="history-view" id="historyView">
+    <div class="history-view-head">
+      <div>
+        <h1>Riwayat Transaksi</h1>
+        <span class="count" id="historyCount">0 transaksi</span>
+      </div>
+      <button class="history-refresh-btn" id="historyRefreshBtn" title="Segarkan riwayat">
+        <svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 4v6h-6"/></svg>
+      </button>
+    </div>
+    <div class="trx-groups" id="historyBody"></div>
+  </div>
+
+  <div class="cart" id="kasirCart">
+    <div class="cart-head">
+      <h2>Pesanan</h2>
+      <select class="badge" id="tableSelect">
+        <option value="1">Meja 1</option>
+        <option value="2">Meja 2</option>
+        <option value="3">Meja 3</option>
+        <option value="4" selected>Meja 4</option>
+        <option value="5">Meja 5</option>
+        <option value="6">Meja 6</option>
+        <option value="7">Meja 7</option>
+      </select>
+    </div>
+
+    <div class="cart-list" id="cartList"></div>
+
+    <div class="cart-summary">
+      <div class="sum-row"><span>Subtotal</span><span class="v" id="subtotalV">Rp0</span></div>
+      <div class="sum-row total"><span>Total</span><span class="v" id="totalV">Rp0</span></div>
+    </div>
+
+    <button class="printer-connect-btn" id="printerConnectBtn" onclick="openPrinterModal()">
+      🔌 Hubungkan Printer
+    </button>
+    <button class="printer-connect-btn" id="printOrderBtn" onclick="printCurrentOrder()">
+      🖨️ Cetak Struk
+    </button>
+
+    <button class="loss-btn" id="lossBtn" onclick="openLossModal()">
+      🗑️ Rusak / Konsumsi Internal
+    </button>
+
+    <button class="pay-btn" id="payBtn">
+      <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+      Bayar Sekarang
+    </button>
+  </div>
+
+</div>
+
+<!-- Modal Metode Pembayaran -->
+<div class="modal-overlay" id="paymentModal">
+  <div class="modal-card" style="width:360px;">
+    <h3>💳 Metode Pembayaran</h3>
+
+    <div class="payment-total-box">
+      <span>Total Tagihan</span>
+      <span id="paymentTotalDisplay">Rp0</span>
+    </div>
+
+    <div class="payment-tabs">
+      <button type="button" class="payment-tab active" id="tabTunai" onclick="switchPaymentTab('tunai')">💵 Tunai</button>
+      <button type="button" class="payment-tab" id="tabQris" onclick="switchPaymentTab('qris')">📱 QRIS</button>
+    </div>
+
+    <!-- Panel Tunai -->
+    <div id="panelTunai">
+      <div class="modal-field">
+        <label>Uang Diterima (Rp)</label>
+        <input type="number" id="cashReceived" step="1000" min="0" placeholder="Contoh: 300000" oninput="updateKembalian()" style="letter-spacing:normal;">
+      </div>
+      <div class="cash-quick-buttons" id="cashQuickButtons"></div>
+      <div class="kembalian-row">
+        <span>Kembalian</span>
+        <span id="kembalianValue">Rp0</span>
+      </div>
+      <div class="modal-error" id="paymentFormError"></div>
+    </div>
+
+    <!-- Panel QRIS -->
+    <div id="panelQris" style="display:none; text-align:center;">
+      <div class="qris-box">
+        <div class="qris-pattern" id="qrisPattern">
+          <span id="qrisLoadingLabel">⏳</span>
+        </div>
+        <div class="qris-merchant-name">KETIK (KEDAI TIKUNGAN)</div>
+        <p style="font-size:12px; color:var(--text-dim); margin-top:8px;">Pindai kode QRIS untuk membayar</p>
+        <p style="font-size:17px; font-weight:700; color:var(--text); margin-top:6px;" id="qrisAmount">Rp0</p>
+      </div>
+      <p style="font-size:11px; color:var(--text-faint); margin-top:10px;">Tekan tombol di bawah setelah pembayaran dikonfirmasi diterima.</p>
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" class="modal-btn-secondary" onclick="closePaymentModal()">Batal</button>
+      <button type="button" class="modal-btn-primary" id="paymentConfirmBtn" onclick="confirmPayment()">Konfirmasi Pembayaran</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Rusak / Konsumsi Internal (dicatat sebagai kerugian, dihitung dari harga modal) -->
+<div class="modal-overlay" id="lossModal">
+  <div class="modal-card" style="width:380px;">
+    <h3>🗑️ Rusak / Konsumsi Internal</h3>
+    <div class="modal-sub">Barang tidak terjual, tapi dicatat sebagai kerugian toko sesuai harga modal — bukan pendapatan.</div>
+
+    <div id="lossItemsList" style="margin-bottom:4px;"></div>
+
+    <div class="loss-total-box">
+      <span>Total Nilai Kerugian (harga modal)</span>
+      <span id="lossTotalDisplay">Rp0</span>
+    </div>
+
+    <div class="modal-field">
+      <label>Alasan</label>
+      <select id="lossReasonInput">
+        <option value="Rusak / Kadaluarsa">Rusak / Kadaluarsa</option>
+        <option value="Konsumsi Karyawan">Konsumsi Karyawan</option>
+        <option value="Konsumsi Owner / Testing Menu">Konsumsi Owner / Testing Menu</option>
+        <option value="Salah Buat / Pesanan Batal">Salah Buat / Pesanan Batal</option>
+        <option value="Lainnya">Lainnya</option>
+      </select>
+    </div>
+    <div class="modal-field">
+      <label>Catatan (opsional)</label>
+      <textarea id="lossNoteInput" rows="2" placeholder="Contoh: 2 gelas es teh tumpah saat servis"></textarea>
+    </div>
+
+    <div class="loss-hint">Stok akan otomatis berkurang dan tercatat sebagai pengeluaran "Susut/Rugi" di pembukuan pemilik — total penjualan hari ini tidak akan berubah.</div>
+
+    <div class="modal-error" id="lossFormError"></div>
+
+    <div class="modal-actions">
+      <button type="button" class="modal-btn-secondary" onclick="closeLossModal()">Batal</button>
+      <button type="button" class="modal-btn-primary" id="lossConfirmBtn" onclick="confirmLoss()" style="background:#f87171;">Catat Kerugian</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="addonModal">
+  <div class="modal-card" style="width:340px;">
+    <h3>Tambahan / Addon</h3>
+    <div class="modal-sub">Pilih tambahan yang diminta pelanggan untuk item ini (opsional).</div>
+
+    <div class="addon-modal-product" id="addonModalProduct">
+      <div class="em"></div>
+      <div>
+        <div class="nm"></div>
+        <div class="pr"></div>
+      </div>
+    </div>
+
+    <div class="addon-check-group" id="addonModalOptions"></div>
+
+    <div class="addon-qty-row">
+      <span class="lbl">Jumlah</span>
+      <div class="addon-qty-ctrl">
+        <button type="button" id="addonQtyDec">−</button>
+        <span id="addonQtyValue">1</span>
+        <button type="button" id="addonQtyInc">+</button>
+      </div>
+    </div>
+
+    <div class="addon-modal-total">
+      <span>Subtotal</span>
+      <span id="addonModalSubtotal">Rp0</span>
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" class="modal-btn-secondary" id="addonCancelBtn">Batal</button>
+      <button type="button" class="modal-btn-primary" id="addonAddBtn">Tambahkan</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal-card">
+    <h3>Ganti Password</h3>
+    <div class="modal-sub" id="modalCashierName">Akun: —</div>
+
+    <div class="modal-field">
+      <label for="oldPin">Password lama</label>
+      <input type="password" id="oldPin" inputmode="numeric" maxlength="4" placeholder="••••" autocomplete="off">
+    </div>
+    <div class="modal-field">
+      <label for="newPin">Password baru</label>
+      <input type="password" id="newPin" inputmode="numeric" maxlength="4" placeholder="••••" autocomplete="off">
+    </div>
+    <div class="modal-field">
+      <label for="confirmPin">Konfirmasi password baru</label>
+      <input type="password" id="confirmPin" inputmode="numeric" maxlength="4" placeholder="••••" autocomplete="off">
+    </div>
+
+    <div class="modal-error" id="modalError"></div>
+
+    <div class="modal-actions">
+      <button id="cancelSettings" class="modal-btn-secondary">Batal</button>
+      <button id="saveSettings" class="modal-btn-primary">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="printerModal">
+  <div class="modal-card" style="width:340px;">
+    <h3>🔌 Hubungkan Printer</h3>
+    <div class="modal-sub">Hubungkan printer fisik lewat Bluetooth atau USB/Serial. Browser akan menampilkan daftar perangkat nyata di sekitar Anda.</div>
+
+    <div class="printer-message" id="printerMessage"></div>
+    <div class="printer-list" id="printerList"></div>
+    <div class="printer-connecting" id="printerConnecting">Menghubungkan...</div>
+
+    <div class="modal-actions">
+      <button id="closePrinterModal" class="modal-btn-secondary" style="flex:1;">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  /* ===== Cek status login (diisi oleh login-kasir.html) ===== */
+  const AUTH_STORAGE_KEY = 'pos_kasir_auth';
+  const TAB_MARKER = 'pos_kasir_tab_active';
+
+  /* Kalau tab ini "baru" (tab/browser sebelumnya sudah ditutup), anggap
+     sesi basi dan hapus supaya wajib login ulang. */
+  if(window.name !== TAB_MARKER){
+    localStorage.removeItem(AUTH_STORAGE_KEY);
+  }
+
+  const authRaw = localStorage.getItem(AUTH_STORAGE_KEY);
+  if(!authRaw){
+    window.location.href = 'login-kasir.html';
+  } else {
+    window.name = TAB_MARKER;
+  }
+  const auth = authRaw ? JSON.parse(authRaw) : { name: '', role: '' };
+  const currentCashier = auth.name;
+
+  function getInitials(name){
+    return (name || '?').split(' ').filter(Boolean).slice(0,2).map(w=>w[0].toUpperCase()).join('');
+  }
+
+  document.getElementById('cashierName').textContent = currentCashier || 'Pengguna';
+  document.getElementById('cashierAvatar').textContent = getInitials(currentCashier);
+
+  document.getElementById('cashierBox').addEventListener('click', ()=>{
+    if(confirm('Keluar dan ganti kasir?')){
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+      window.name = '';
+      window.location.href = 'login-kasir.html';
+    }
+  });
+</script>
+
+<script>
+  /* ===== Koneksi Supabase ===== */
+  const SUPABASE_URL = 'https://czfmorumcnnjberlcnda.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_b7BUED-Pe3Z4z5CPv3_wSg_GI4mRjUj';
+  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  /* ===== Data produk (dimuat dari Supabase) ===== */
+  let products = [];
+
+  /* ===== Pesanan per meja (1-7), masing-masing punya keranjang sendiri ===== */
+  const carts = {
+    "1": {},
+    "2": {},
+    "3": {},
+    "4": {},
+    "5": {},
+    "6": {},
+    "7": {},
+  };
+  let currentTable = document.getElementById('tableSelect').value; // meja aktif saat ini
+  let cart = carts[currentTable]; // referensi keranjang meja aktif
+  let paymentMethod = "Tunai";
+  let transactions = []; // riwayat transaksi (dimuat dari Supabase)
+  let trxCounter = 1;
+
+  const grid = document.getElementById('grid');
+  const cartList = document.getElementById('cartList');
+  const itemCount = document.getElementById('itemCount');
+  const noResult = document.getElementById('noResult');
+  const searchInput = document.getElementById('searchInput');
+
+  function formatRp(n){
+    return "Rp" + (Number(n) || 0).toLocaleString('id-ID');
+  }
+
+  function isMinuman(category){
+    const c = (category || '').toLowerCase();
+    return c.includes('minum') || c.includes('drink') || c.includes('beverage');
+  }
+
+  /* ===== Helper baris keranjang (mendukung addon) =====
+     Tiap baris keranjang punya kunci unik: productId saja (tanpa addon),
+     atau "productId::key1,key2" (dengan addon) — supaya kombinasi addon
+     berbeda pada produk yang sama tercatat sebagai baris terpisah. */
+  function cartLineKey(productId, addonKeys){
+    if(!addonKeys || !addonKeys.length) return String(productId);
+    return productId + '::' + addonKeys.slice().sort().join(',');
+  }
+  function lineUnitPrice(p, addons){
+    const addonSum = (addons||[]).reduce((s,a)=>s+(Number(a.price)||0), 0);
+    return p.price + addonSum;
+  }
+  // Total qty produk tertentu di keranjang, dijumlah dari semua baris/varian addon-nya.
+  function getCartProductQty(productId){
+    return Object.values(cart).reduce((s,line)=> line.productId===productId ? s+line.qty : s, 0);
+  }
+
+  function renderGrid(filter=""){
+    const q = filter.trim().toLowerCase();
+    const filtered = products
+      .filter(p => p.name.toLowerCase().includes(q))
+      .sort((a, b) => {
+        const groupA = isMinuman(a.category) ? 1 : 0;
+        const groupB = isMinuman(b.category) ? 1 : 0;
+        if(groupA !== groupB) return groupA - groupB;
+        return a.name.localeCompare(b.name);
+      });
+    grid.innerHTML = "";
+    filtered.forEach(p=>{
+      const qtyInCart = getCartProductQty(p.id);
+      const stockNum = Number(p.stock) || 0;
+      const remaining = stockNum - qtyInCart;
+      const hasAddons = p.addons && p.addons.length > 0;
+      const div = document.createElement('div');
+      div.className = 'item' + (remaining<=0 ? ' out' : '') + (qtyInCart>0 ? ' in-cart' : '');
+      div.innerHTML = `
+        ${hasAddons ? '<span class="addon-flag">+ Tambahan</span>' : ''}
+        <div class="thumb">${p.emoji}</div>
+        <div class="name">${p.name}</div>
+        <div class="meta"><span class="price">${formatRp(p.price)}</span><span class="stock">Stok ${remaining}</span></div>
+      `;
+      if(remaining > 0){
+        div.addEventListener('click', ()=> addToCart(p.id));
+      }
+      grid.appendChild(div);
+    });
+    itemCount.textContent = filtered.length + " item";
+    noResult.style.display = filtered.length === 0 ? "block" : "none";
+    grid.style.display = filtered.length === 0 ? "none" : "grid";
+  }
+
+  function addToCart(id){
+    const p = products.find(x=>x.id===id);
+    if(getCartProductQty(id) >= p.stock){
+      showToast(`Stok ${p.name} habis`);
+      return;
+    }
+    if(p.addons && p.addons.length > 0){
+      openAddonModal(p);
+      return;
+    }
+    const key = cartLineKey(id, []);
+    const existing = cart[key];
+    cart[key] = { productId: id, qty: (existing ? existing.qty : 0) + 1, addons: [] };
+    renderAll();
+    showToast(`${p.name} ditambahkan`);
+  }
+
+  function changeQty(lineKey, delta){
+    const line = cart[lineKey];
+    if(!line) return;
+    const p = products.find(x=>x.id===line.productId);
+    const otherLinesQty = getCartProductQty(line.productId) - line.qty;
+    let next = line.qty + delta;
+    if(next > p.stock - otherLinesQty){ next = p.stock - otherLinesQty; }
+    if(next <= 0){
+      delete cart[lineKey];
+    } else {
+      line.qty = next;
+    }
+    renderAll();
+  }
+
+  function removeFromCart(lineKey){
+    delete cart[lineKey];
+    renderAll();
+  }
+
+  function renderCart(){
+    const keys = Object.keys(cart);
+    if(keys.length === 0){
+      cartList.innerHTML = `
+        <div class="cart-empty">
+          <svg viewBox="0 0 24 24"><circle cx="9" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/><path d="M2 3h2l2.6 12.6a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.6L21 7H6"/></svg>
+          <div class="t">Keranjang kosong</div>
+          <div class="s">Klik produk untuk menambahkan</div>
+        </div>`;
+      return;
+    }
+    cartList.innerHTML = "";
+    keys.forEach(key=>{
+      const line = cart[key];
+      const p = products.find(x=>x.id==line.productId);
+      const qty = line.qty;
+      const unit = lineUnitPrice(p, line.addons);
+      const addonBadges = (line.addons && line.addons.length)
+        ? `<div class="addon-badges">${line.addons.map(a=>`<span class="addon-badge">+ ${a.name}</span>`).join('')}</div>`
+        : '';
+      const row = document.createElement('div');
+      row.className = 'cart-row';
+      row.innerHTML = `
+        <div class="qty-ctrl">
+          <button class="dec">−</button>
+          <span class="qty">${qty}×</span>
+          <button class="inc">+</button>
+        </div>
+        <div class="info">
+          <div class="n">${p.name}</div>
+          <div class="p">${formatRp(unit)}</div>
+          ${addonBadges}
+        </div>
+        <span class="sub">${formatRp(unit * qty)}</span>
+        <button class="del" title="Hapus">
+          <svg viewBox="0 0 24 24"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+        </button>
+      `;
+      row.querySelector('.inc').addEventListener('click', ()=>changeQty(key, 1));
+      row.querySelector('.dec').addEventListener('click', ()=>changeQty(key, -1));
+      row.querySelector('.del').addEventListener('click', ()=>removeFromCart(key));
+      cartList.appendChild(row);
+    });
+  }
+
+  function renderSummary(){
+    const subtotal = Object.values(cart).reduce((sum,line)=>{
+      const p = products.find(x=>x.id==line.productId);
+      return sum + lineUnitPrice(p, line.addons) * line.qty;
+    }, 0);
+    const total = subtotal;
+    document.getElementById('subtotalV').textContent = formatRp(subtotal);
+    document.getElementById('totalV').textContent = formatRp(total);
+    return total;
+  }
+
+  function renderAll(){
+    renderGrid(searchInput.value);
+    renderCart();
+    renderSummary();
+  }
+
+  /* ===== Modal pilih addon ===== */
+  let addonModalProduct = null;
+  let addonModalQty = 1;
+  const addonModalOverlay = document.getElementById('addonModal');
+
+  function openAddonModal(p){
+    addonModalProduct = p;
+    addonModalQty = 1;
+    document.querySelector('#addonModalProduct .em').textContent = p.emoji;
+    document.querySelector('#addonModalProduct .nm').textContent = p.name;
+    document.querySelector('#addonModalProduct .pr').textContent = formatRp(p.price);
+    document.getElementById('addonModalOptions').innerHTML = p.addons.map(a=>`
+      <label class="addon-check">
+        <input type="checkbox" data-addon-key="${a.key}" data-addon-name="${a.name}" data-addon-price="${a.price}">
+        + ${a.name} <span class="addon-price">${formatRp(Number(a.price) || 0)}</span>
+      </label>
+    `).join('');
+    document.getElementById('addonModalOptions').querySelectorAll('input[type="checkbox"]').forEach(cb=>{
+      cb.addEventListener('change', updateAddonModalTotal);
+    });
+    document.getElementById('addonQtyValue').textContent = addonModalQty;
+    updateAddonModalTotal();
+    addonModalOverlay.classList.add('show');
+  }
+  function closeAddonModal(){
+    addonModalOverlay.classList.remove('show');
+    addonModalProduct = null;
+  }
+  function getAddonModalSelected(){
+    return Array.from(document.getElementById('addonModalOptions').querySelectorAll('input[type="checkbox"]:checked'))
+      .map(cb=>({ key: cb.dataset.addonKey, name: cb.dataset.addonName, price: Number(cb.dataset.addonPrice) }));
+  }
+  function updateAddonModalTotal(){
+    if(!addonModalProduct) return;
+    const selected = getAddonModalSelected();
+    const unit = lineUnitPrice(addonModalProduct, selected);
+    document.getElementById('addonModalSubtotal').textContent = formatRp(unit * addonModalQty);
+  }
+  document.getElementById('addonQtyInc').addEventListener('click', ()=>{
+    if(!addonModalProduct) return;
+    const maxQty = addonModalProduct.stock - getCartProductQty(addonModalProduct.id);
+    if(addonModalQty >= maxQty) return;
+    addonModalQty++;
+    document.getElementById('addonQtyValue').textContent = addonModalQty;
+    updateAddonModalTotal();
+  });
+  document.getElementById('addonQtyDec').addEventListener('click', ()=>{
+    if(addonModalQty <= 1) return;
+    addonModalQty--;
+    document.getElementById('addonQtyValue').textContent = addonModalQty;
+    updateAddonModalTotal();
+  });
+  document.getElementById('addonCancelBtn').addEventListener('click', closeAddonModal);
+  document.getElementById('addonAddBtn').addEventListener('click', ()=>{
+    if(!addonModalProduct) return;
+    const p = addonModalProduct;
+    const remaining = p.stock - getCartProductQty(p.id);
+    if(remaining <= 0){
+      showToast(`Stok ${p.name} habis`);
+      return;
+    }
+    const qtyToAdd = Math.min(addonModalQty, remaining);
+    const selected = getAddonModalSelected();
+    const key = cartLineKey(p.id, selected.map(a=>a.key));
+    const existing = cart[key];
+    cart[key] = { productId: p.id, qty: (existing ? existing.qty : 0) + qtyToAdd, addons: selected };
+    closeAddonModal();
+    renderAll();
+    showToast(`${p.name} ditambahkan`);
+  });
+  addonModalOverlay.addEventListener('click', (e)=>{
+    if(e.target === e.currentTarget) closeAddonModal();
+  });
+
+  let toastTimer;
+  function showToast(msg){
+    let toast = document.querySelector('.toast');
+    if(!toast){
+      toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.innerHTML = `<svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg><span></span>`;
+      document.body.appendChild(toast);
+    }
+    toast.querySelector('span').textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=> toast.classList.remove('show'), 1800);
+  }
+
+  /* ===== Search ===== */
+  searchInput.addEventListener('input', ()=> renderGrid(searchInput.value));
+
+  /* ===== Ganti meja: tiap meja tampilkan pesanannya sendiri ===== */
+  document.getElementById('tableSelect').addEventListener('change', (e)=>{
+    currentTable = e.target.value;
+    cart = carts[currentTable];
+    renderAll();
+  });
+
+  /* ===== Buka modal pembayaran ===== */
+  document.getElementById('payBtn').addEventListener('click', ()=>{
+    if(Object.keys(cart).length === 0){
+      showToast("Keranjang masih kosong");
+      return;
+    }
+    openPaymentModal();
+  });
+
+  function parseRp(str){
+    return Number(String(str).replace(/[^0-9]/g, '')) || 0;
+  }
+
+  function openPaymentModal(){
+    const total = renderSummary();
+    document.getElementById('paymentTotalDisplay').textContent = formatRp(total);
+    document.getElementById('qrisAmount').textContent = formatRp(total);
+    document.getElementById('cashReceived').value = '';
+    document.getElementById('kembalianValue').textContent = formatRp(0);
+    hidePaymentError();
+    renderCashQuickButtons(total);
+    switchPaymentTab('tunai');
+    document.getElementById('paymentModal').classList.add('show');
+  }
+
+  function closePaymentModal(){
+    document.getElementById('paymentModal').classList.remove('show');
+  }
+
+  function switchPaymentTab(tab){
+    paymentMethod = tab === 'tunai' ? 'Tunai' : 'QRIS';
+    document.getElementById('tabTunai').classList.toggle('active', tab === 'tunai');
+    document.getElementById('tabQris').classList.toggle('active', tab === 'qris');
+    document.getElementById('panelTunai').style.display = tab === 'tunai' ? 'block' : 'none';
+    document.getElementById('panelQris').style.display = tab === 'qris' ? 'block' : 'none';
+    document.getElementById('paymentConfirmBtn').textContent = tab === 'tunai' ? 'Konfirmasi Pembayaran' : 'Sudah Dibayar (QRIS)';
+    hidePaymentError();
+    if(tab === 'qris'){
+      const total = parseRp(document.getElementById('paymentTotalDisplay').textContent);
+      renderQrisCode(total);
+    }
+  }
+
+  function renderCashQuickButtons(total){
+    const container = document.getElementById('cashQuickButtons');
+    const suggestions = new Set();
+    suggestions.add(Math.ceil(total));
+    [1000, 5000, 10000, 20000, 50000, 100000].forEach(step=>{
+      const rounded = Math.ceil(total / step) * step;
+      if(rounded > 0) suggestions.add(rounded);
+    });
+    const sorted = Array.from(suggestions).filter(v => v >= total).sort((a,b)=>a-b).slice(0,4);
+    container.innerHTML = sorted.map(amount =>
+      `<button type="button" class="cash-quick-btn" onclick="setCashReceived(${amount})">${formatRp(amount)}</button>`
+    ).join('');
+  }
+
+  function setCashReceived(amount){
+    document.getElementById('cashReceived').value = amount;
+    updateKembalian();
+  }
+
+  function updateKembalian(){
+    const total = parseRp(document.getElementById('paymentTotalDisplay').textContent);
+    const received = Number(document.getElementById('cashReceived').value) || 0;
+    const change = received - total;
+    document.getElementById('kembalianValue').textContent = formatRp(Math.max(0, change));
+    hidePaymentError();
+  }
+
+  function showPaymentError(msg){
+    const el = document.getElementById('paymentFormError');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+  function hidePaymentError(){
+    document.getElementById('paymentFormError').style.display = 'none';
+  }
+
+  /* ===== QRIS Dinamis (nominal otomatis terisi sesuai total) =====
+     Payload QRIS statis merchant. Nominal disisipkan secara dinamis
+     ke dalam field 54 (Transaction Amount) lalu CRC dihitung ulang. */
+  const QRIS_STATIC_PAYLOAD = "00020101021126610014COM.GO-JEK.WWW01189360091430010807460210G0010807460303UMI51440014ID.CO.QRIS.WWW0215ID10254393485700303UMI5204581253033605802ID5924KETIK ( KEDAI TIKUNGAN )6013JAKARTA TIMUR61051381062070703A0163040FB5";
+
+  function crc16ccitt(str){
+    let crc = 0xFFFF;
+    for(let c = 0; c < str.length; c++){
+      crc ^= (str.charCodeAt(c) << 8);
+      for(let i = 0; i < 8; i++){
+        if((crc & 0x8000) !== 0){
+          crc = ((crc << 1) ^ 0x1021) & 0xFFFF;
+        } else {
+          crc = (crc << 1) & 0xFFFF;
+        }
+      }
+    }
+    return crc.toString(16).toUpperCase().padStart(4, '0');
+  }
+
+  function buildDynamicQrisPayload(amount){
+    let payload = QRIS_STATIC_PAYLOAD.slice(0, -8);
+    payload = payload.replace('010211', '010212');
+    const amountStr = String(Math.round(amount));
+    const tag54 = '54' + String(amountStr.length).padStart(2, '0') + amountStr;
+    const idx53 = payload.indexOf('5303360');
+    const insertAt = idx53 !== -1 ? idx53 + '5303360'.length : payload.length;
+    const newPayload = payload.slice(0, insertAt) + tag54 + payload.slice(insertAt);
+    const toChecksum = newPayload + '6304';
+    const crc = crc16ccitt(toChecksum);
+    return toChecksum + crc;
+  }
+
+  let qrisCodeInstance = null;
+  function renderQrisCode(amount){
+    const container = document.getElementById('qrisPattern');
+    document.getElementById('qrisAmount').textContent = formatRp(amount);
+    if(!amount || amount <= 0){
+      container.innerHTML = '<span style="font-size:13px; color:#999;">Total belum tersedia</span>';
+      return;
+    }
+    if(typeof QRCode === 'undefined'){
+      container.innerHTML = '<span style="font-size:13px; color:#999;">Gagal memuat QR</span>';
+      return;
+    }
+    const payload = buildDynamicQrisPayload(amount);
+    container.innerHTML = '';
+    qrisCodeInstance = new QRCode(container, {
+      text: payload,
+      width: 164,
+      height: 164,
+      correctLevel: QRCode.CorrectLevel.M
+    });
+  }
+
+  /* ===== Konfirmasi & proses pembayaran ===== */
+  async function confirmPayment(){
+    const total = parseRp(document.getElementById('paymentTotalDisplay').textContent);
+    let cashReceived = total;
+    let change = 0;
+
+    if(paymentMethod === 'Tunai'){
+      cashReceived = Number(document.getElementById('cashReceived').value) || 0;
+      if(cashReceived < total){
+        showPaymentError('Uang diterima kurang dari total tagihan.');
+        return;
+      }
+      change = cashReceived - total;
+    }
+
+    const confirmBtn = document.getElementById('paymentConfirmBtn');
+    confirmBtn.disabled = true;
+
+    const items = Object.values(cart).map(line=>{
+      const p = products.find(x=>x.id==line.productId);
+      const unit = lineUnitPrice(p, line.addons);
+      const name = p.name + (line.addons && line.addons.length ? ' (' + line.addons.map(a=>'+ '+a.name).join(', ') + ')' : '');
+      return { id:p.id, name, qty:line.qty, price:unit, addons: line.addons || [] };
+    });
+    const subtotal = items.reduce((s,it)=>s+it.price*it.qty,0);
+    const tax = 0;
+    const totalTrx = subtotal;
+    const profit = items.reduce((s,it)=>{
+      const p = products.find(x=>x.id===it.id);
+      const costPrice = p.costPrice || 0;
+      return s + (it.price - costPrice) * it.qty;
+    }, 0);
+    const now = new Date();
+    const table = document.getElementById('tableSelect').value;
+
+    // 1) Simpan transaksi ke tabel "transactions" (satu tabel bersama dengan aplikasi lain)
+    const { data: trxData, error: trxError } = await supabaseClient
+      .from('transactions')
+      .insert({
+        time: now.toISOString(),
+        items,
+        subtotal,
+        tax,
+        discount: 0,
+        total: totalTrx,
+        profit,
+        payment_method: paymentMethod,
+        cash_received: cashReceived,
+        change,
+        table_number: Number(table),
+        type: 'sale',
+        cashier_name: currentCashier
+      })
+      .select()
+      .single();
+    if(trxError){
+      showToast("Gagal menyimpan transaksi: " + trxError.message);
+      confirmBtn.disabled = false;
+      return;
+    }
+
+    // 2) Kurangi stok tiap produk yang terjual di tabel "menu_items"
+    for(const it of items){
+      const p = products.find(x=>x.id===it.id);
+      const newStock = Math.max(0, p.stock - it.qty);
+      const { error: stockError } = await supabaseClient
+        .from('menu_items')
+        .update({ stock: newStock })
+        .eq('id', it.id);
+      if(!stockError){
+        p.stock = newStock;
+      }
+    }
+
+    // 3) Update tampilan lokal
+    transactions.unshift({
+      id: trxData.id,
+      time: now.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}),
+      date: now.toLocaleDateString('id-ID',{day:'numeric',month:'short'}),
+      method: paymentMethod,
+      table,
+      items,
+      subtotal, tax, total: totalTrx,
+      cashierName: currentCashier
+    });
+    showToast(`Meja ${table} · Pembayaran ${paymentMethod} ${formatRp(totalTrx)} berhasil`);
+
+    // 4) Kirim struk ke printer yang sudah terhubung (jika ada)
+    if(typeof connectedDevice !== 'undefined' && connectedDevice){
+      const receipt = buildReceiptText({
+        trxId: trxData.id,
+        date: now.toLocaleString('id-ID'),
+        table,
+        cashier: currentCashier,
+        items, subtotal, tax, total: totalTrx,
+        method: paymentMethod
+      });
+      sendReceiptToPrinter(receipt);
+    }
+
+    carts[currentTable] = {};
+    cart = carts[currentTable];
+    confirmBtn.disabled = false;
+    closePaymentModal();
+    renderAll();
+    renderHistory();
+  }
+
+  document.getElementById('paymentModal').addEventListener('click', (e)=>{
+    if(e.target === e.currentTarget) closePaymentModal();
+  });
+
+  /* ===== Rusak / Konsumsi Internal =====
+     Dicatat sebagai KERUGIAN, bukan penjualan: nilainya dihitung dari
+     harga MODAL (cost price) tiap item, karena itulah nilai yang benar-benar
+     hilang dari toko. Disimpan ke tabel "expenses" (kategori "Susut/Rugi")
+     supaya masuk pembukuan pemilik tanpa mengubah angka penjualan/omzet. */
+  function getLossItemsFromCart(){
+    return Object.values(cart).map(line=>{
+      const p = products.find(x=>x.id==line.productId);
+      const unit = lineUnitPrice(p, line.addons);
+      const name = p.name + (line.addons && line.addons.length ? ' (' + line.addons.map(a=>'+ '+a.name).join(', ') + ')' : '');
+      return { id: p.id, name, qty: line.qty, price: unit, costPrice: p.costPrice || 0 };
+    });
+  }
+
+  function showLossError(msg){
+    const el = document.getElementById('lossFormError');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+  function hideLossError(){
+    document.getElementById('lossFormError').style.display = 'none';
+  }
+
+  function openLossModal(){
+    if(Object.keys(cart).length === 0){
+      showToast('Keranjang masih kosong. Tambahkan produk dulu untuk dicatat sebagai kerugian.');
+      return;
+    }
+    const items = getLossItemsFromCart();
+    const listEl = document.getElementById('lossItemsList');
+    listEl.innerHTML = items.map(it => `
+      <div class="loss-item-row">
+        <span class="n">${it.name}</span>
+        <span class="q">${it.qty}× · modal ${formatRp(it.costPrice)} = ${formatRp(it.costPrice * it.qty)}</span>
+      </div>
+    `).join('');
+    const totalModal = items.reduce((s,it)=> s + it.costPrice * it.qty, 0);
+    document.getElementById('lossTotalDisplay').textContent = formatRp(totalModal);
+    document.getElementById('lossReasonInput').value = 'Rusak / Kadaluarsa';
+    document.getElementById('lossNoteInput').value = '';
+    hideLossError();
+    document.getElementById('lossModal').classList.add('show');
+  }
+
+  function closeLossModal(){
+    document.getElementById('lossModal').classList.remove('show');
+  }
+
+  document.getElementById('lossModal').addEventListener('click', (e)=>{
+    if(e.target === e.currentTarget) closeLossModal();
+  });
+
+  async function confirmLoss(){
+    const items = getLossItemsFromCart();
+    if(items.length === 0){
+      closeLossModal();
+      return;
+    }
+    const totalModal = items.reduce((s,it)=> s + it.costPrice * it.qty, 0);
+    const reason = document.getElementById('lossReasonInput').value;
+    const note = document.getElementById('lossNoteInput').value.trim();
+
+    const confirmBtn = document.getElementById('lossConfirmBtn');
+    confirmBtn.disabled = true;
+    hideLossError();
+
+    const itemsSummary = items.map(it => `${it.name} x${it.qty}`).join(', ');
+    const description = `${reason} — ${itemsSummary}` + (note ? ` (${note})` : '');
+    const now = new Date();
+
+    // 1) Catat sebagai pengeluaran/kerugian (bukan penjualan) di tabel "expenses",
+    //    nilainya = total harga MODAL, bukan harga jual.
+    const { error: expError } = await supabaseClient
+      .from('expenses')
+      .insert({
+        category: 'Susut/Rugi',
+        description,
+        amount: totalModal,
+        time: now.toISOString(),
+        created_by: currentCashier
+      });
+    if(expError){
+      showLossError(
+        expError.message.includes('does not exist')
+          ? 'Tabel "expenses" belum ada di Supabase. Hubungi pemilik untuk membuat tabel ini.'
+          : 'Gagal mencatat kerugian: ' + expError.message
+      );
+      confirmBtn.disabled = false;
+      return;
+    }
+
+    // 2) Kurangi stok tiap produk yang diambil, sama seperti alur penjualan
+    for(const it of items){
+      const p = products.find(x=>x.id===it.id);
+      const newStock = Math.max(0, p.stock - it.qty);
+      const { error: stockError } = await supabaseClient
+        .from('menu_items')
+        .update({ stock: newStock })
+        .eq('id', it.id);
+      if(!stockError){
+        p.stock = newStock;
+      }
+    }
+
+    showToast(`Kerugian ${formatRp(totalModal)} dicatat · ${reason}`);
+
+    carts[currentTable] = {};
+    cart = carts[currentTable];
+    confirmBtn.disabled = false;
+    closeLossModal();
+    renderAll();
+  }
+
+  /* ===== Riwayat transaksi ===== */
+  const historyBody = document.getElementById('historyBody');
+  const historyCount = document.getElementById('historyCount');
+
+  function renderHistory(){
+    historyCount.textContent = transactions.length + " transaksi";
+    if(transactions.length === 0){
+      historyBody.innerHTML = `
+        <div class="trx-empty">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>
+          <div class="t">Belum ada transaksi</div>
+        </div>`;
+      return;
+    }
+
+    // Kelompokkan transaksi berdasarkan nama kasir yang melayani
+    const groups = {};
+    const order = []; // urutan kasir sesuai kemunculan pertama (transaksi terbaru duluan)
+    transactions.forEach(t=>{
+      const key = t.cashierName || 'Tidak diketahui';
+      if(!groups[key]){
+        groups[key] = [];
+        order.push(key);
+      }
+      groups[key].push(t);
+    });
+
+    historyBody.innerHTML = order.map(name=>`
+      <div class="trx-group">
+        <div class="trx-group-head">
+          <span class="trx-group-title">KASIR ${name.toUpperCase()}</span>
+          <span class="trx-group-count">${groups[name].length} transaksi</span>
+        </div>
+        <div class="trx-grid">
+          ${groups[name].map(t=>`
+            <div class="trx-card">
+              <div class="trx-card-head">
+                <div>
+                  <div class="trx-id">${t.id} · Meja ${t.table}</div>
+                  <div class="trx-time">${t.date} · ${t.time}</div>
+                </div>
+                <span class="trx-method">${t.method}</span>
+              </div>
+              <div class="trx-items">
+                ${t.items.map(it=>`${it.qty}× ${it.name}`).join('<br>')}
+              </div>
+              <div class="trx-total"><span>Total</span><span class="v">${formatRp(t.total)}</span></div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  /* ===== Navigasi sidebar: Kasir <-> Riwayat ===== */
+  const navKasir = document.getElementById('navKasir');
+  const navRiwayat = document.getElementById('navRiwayat');
+  const kasirCatalog = document.getElementById('kasirCatalog');
+  const kasirCart = document.getElementById('kasirCart');
+  const historyView = document.getElementById('historyView');
+
+  function showKasir(){
+    navKasir.classList.add('active');
+    navRiwayat.classList.remove('active');
+    kasirCatalog.style.display = 'block';
+    kasirCart.style.display = 'flex';
+    historyView.classList.remove('active');
+  }
+  async function showRiwayat(){
+    navRiwayat.classList.add('active');
+    navKasir.classList.remove('active');
+    kasirCatalog.style.display = 'none';
+    kasirCart.style.display = 'none';
+    historyView.classList.add('active');
+    renderHistory();
+    await refreshHistory();
+  }
+  navKasir.addEventListener('click', showKasir);
+  navRiwayat.addEventListener('click', showRiwayat);
+
+  /* Menarik ulang riwayat transaksi terbaru dari Supabase (transaksi kasir manapun & admin) */
+  const historyRefreshBtn = document.getElementById('historyRefreshBtn');
+  async function refreshHistory(){
+    historyRefreshBtn.classList.add('spinning');
+    historyRefreshBtn.disabled = true;
+    await loadTransactions();
+    renderHistory();
+    historyRefreshBtn.classList.remove('spinning');
+    historyRefreshBtn.disabled = false;
+  }
+  historyRefreshBtn.addEventListener('click', async ()=>{
+    await refreshHistory();
+    showToast('Riwayat transaksi diperbarui');
+  });
+
+  /* ===== Jam ===== */
+  function updateClock(){
+    const now = new Date();
+    const h = String(now.getHours()).padStart(2,'0');
+    const m = String(now.getMinutes()).padStart(2,'0');
+    document.getElementById('jam').textContent = h + ':' + m;
+  }
+  updateClock();
+  setInterval(updateClock, 1000*30);
+
+  /* ===== Muat data dari Supabase (tabel bersama dengan aplikasi lain) ===== */
+  async function loadProducts(){
+    const { data, error } = await supabaseClient
+      .from('menu_items')
+      .select('*')
+      .order('name', { ascending: true });
+    if(error){
+      showToast("Gagal memuat produk: " + error.message);
+      return;
+    }
+    products = data.map(p => ({
+      id: p.id,
+      name: p.name,
+      price: Number(p.price) || 0,
+      costPrice: Number(p.cost_price) || 0,
+      stock: Number(p.stock) || 0,
+      emoji: p.emoji || '🍽️',
+      category: p.category,
+      addons: Array.isArray(p.addons) ? p.addons : []
+    }));
+  }
+
+  async function loadTransactions(){
+    // Riwayat transaksi bisa dilihat oleh semua kasir yang login,
+    // dikelompokkan per nama kasir yang melayani transaksi tersebut.
+    // Ambil 'sale' (aplikasi baru) maupun 'penjualan' (riwayat lama dari Ketikpos).
+    const { data, error } = await supabaseClient
+      .from('transactions')
+      .select('*')
+      .in('type', ['sale','penjualan'])
+      .order('time', { ascending: false });
+    if(error){
+      showToast("Gagal memuat riwayat transaksi: " + error.message);
+      return;
+    }
+    transactions = data.map(t => {
+      const d = new Date(t.time);
+      return {
+        id: t.id,
+        time: d.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' }),
+        date: d.toLocaleDateString('id-ID', { day:'numeric', month:'short' }),
+        method: t.payment_method,
+        table: t.table_number,
+        items: t.items,
+        subtotal: t.subtotal,
+        tax: t.tax,
+        total: t.total,
+        cashierName: t.cashier_name
+      };
+    });
+  }
+
+  /* ===== Init ===== */
+  (async function init(){
+    await loadProducts();
+    await loadTransactions();
+    renderAll();
+    renderHistory();
+  })();
+</script>
+
+<script>
+  /* ===== Pengaturan akun: ganti password akun yang sedang login ===== */
+  const settingsBtn = document.getElementById('settingsBtn');
+  const settingsModal = document.getElementById('settingsModal');
+  const modalCashierName = document.getElementById('modalCashierName');
+  const oldPinInput = document.getElementById('oldPin');
+  const newPinInput = document.getElementById('newPin');
+  const confirmPinInput = document.getElementById('confirmPin');
+  const modalError = document.getElementById('modalError');
+  const cancelSettingsBtn = document.getElementById('cancelSettings');
+  const saveSettingsBtn = document.getElementById('saveSettings');
+
+  function openSettingsModal(){
+    modalCashierName.textContent = 'Akun: ' + (currentCashier || '-');
+    oldPinInput.value = '';
+    newPinInput.value = '';
+    confirmPinInput.value = '';
+    modalError.style.display = 'none';
+    settingsModal.classList.add('show');
+    oldPinInput.focus();
+  }
+  function closeSettingsModal(){
+    settingsModal.classList.remove('show');
+  }
+  function showModalError(msg){
+    modalError.textContent = msg;
+    modalError.style.display = 'block';
+  }
+
+  settingsBtn.addEventListener('click', openSettingsModal);
+
+  /* ===== Toggle tema terang/gelap ===== */
+  document.getElementById('themeToggleBtn').addEventListener('click', ()=>{
+    const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+    if(isLight){
+      document.documentElement.removeAttribute('data-theme');
+      localStorage.setItem('pos_kasir_theme', 'dark');
+    } else {
+      document.documentElement.setAttribute('data-theme', 'light');
+      localStorage.setItem('pos_kasir_theme', 'light');
+    }
+  });
+
+  cancelSettingsBtn.addEventListener('click', closeSettingsModal);
+  settingsModal.addEventListener('click', (e)=>{
+    if(e.target === settingsModal) closeSettingsModal();
+  });
+
+  [oldPinInput, newPinInput, confirmPinInput].forEach(inp=>{
+    inp.addEventListener('input', ()=>{
+      inp.value = inp.value.replace(/\D/g,'').slice(0,4);
+    });
+  });
+
+  saveSettingsBtn.addEventListener('click', async ()=>{
+    const oldPin = oldPinInput.value;
+    const newPin = newPinInput.value;
+    const confirmPin = confirmPinInput.value;
+
+    if(oldPin.length !== 4 || newPin.length !== 4){
+      showModalError('Password harus 4 digit angka.');
+      return;
+    }
+    if(newPin !== confirmPin){
+      showModalError('Konfirmasi password baru tidak cocok.');
+      return;
+    }
+    if(newPin === oldPin){
+      showModalError('Password baru tidak boleh sama dengan password lama.');
+      return;
+    }
+
+    saveSettingsBtn.disabled = true;
+    saveSettingsBtn.textContent = 'Menyimpan...';
+
+    // 1) Verifikasi password lama milik akun yang sedang login
+    const { data: userRow, error: checkError } = await supabaseClient
+      .from('users')
+      .select('*')
+      .or(`username.eq.${auth.username},name.eq.${auth.name}`)
+      .eq('password', oldPin)
+      .maybeSingle();
+
+    if(checkError){
+      showModalError('Gagal menghubungi server: ' + checkError.message);
+      saveSettingsBtn.disabled = false;
+      saveSettingsBtn.textContent = 'Simpan';
+      return;
+    }
+    if(!userRow){
+      showModalError('Password lama salah.');
+      saveSettingsBtn.disabled = false;
+      saveSettingsBtn.textContent = 'Simpan';
+      return;
+    }
+
+    // 2) Simpan password baru ke tabel "users"
+    const { error: updateError } = await supabaseClient
+      .from('users')
+      .update({ password: newPin })
+      .eq('username', userRow.username);
+
+    saveSettingsBtn.disabled = false;
+    saveSettingsBtn.textContent = 'Simpan';
+
+    if(updateError){
+      showModalError('Gagal menyimpan password: ' + updateError.message);
+      return;
+    }
+
+    closeSettingsModal();
+    showToast('Password berhasil diubah. Silakan login ulang.');
+    setTimeout(()=>{
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+      window.name = '';
+      window.location.href = 'login-kasir.html';
+    }, 1500);
+  });
+</script>
+
+<script>
+  /* ===== Hubungkan & Cetak Struk via Printer (REAL — Web Bluetooth / Web Serial API) ===== */
+  let connectedDevice = null;         // GATT BluetoothDevice atau SerialPort
+  let connectedCharacteristic = null; // Untuk Bluetooth: characteristic yang bisa ditulis
+  let connectionType = null;          // 'bluetooth' | 'serial'
+  let isConnectingPrinter = false;
+
+  // UUID service/characteristic ESC/POS BLE printer yang umum dipakai printer thermal murah.
+  // Beda merk bisa beda — kita coba beberapa yang umum lalu fallback dengan aman.
+  const BLE_PRINTER_SERVICES = [
+    '000018f0-0000-1000-8000-00805f9b34fb', // service printer generik umum
+    '49535343-fe7d-4ae5-8fa9-9fafd205e455', // service gaya ISSC/UART umum
+    '0000ff00-0000-1000-8000-00805f9b34fb'
+  ];
+
+  const printerModal = document.getElementById('printerModal');
+  const printerList = document.getElementById('printerList');
+  const printerMessage = document.getElementById('printerMessage');
+  const printerConnecting = document.getElementById('printerConnecting');
+  const printerConnectBtn = document.getElementById('printerConnectBtn');
+
+  function openPrinterModal(){
+    clearPrinterMessage();
+    renderPrinterStatus();
+    printerModal.classList.add('show');
+  }
+  function closePrinterModalFn(){
+    printerModal.classList.remove('show');
+  }
+  document.getElementById('closePrinterModal').addEventListener('click', closePrinterModalFn);
+  printerModal.addEventListener('click', (e)=>{
+    if(e.target === printerModal) closePrinterModalFn();
+  });
+
+  function renderPrinterStatus(){
+    const btSupported = !!navigator.bluetooth;
+    const serialSupported = !!navigator.serial;
+
+    let statusHtml = '';
+    if(connectedDevice){
+      statusHtml += `
+        <div class="printer-option active">
+          <div class="printer-option-icon">🖨️</div>
+          <div class="printer-option-info">
+            <div class="printer-option-name">${connectedDevice.name || 'Printer'}</div>
+            <div class="printer-option-type">${connectionType === 'bluetooth' ? 'Bluetooth' : 'USB / Serial'}</div>
+          </div>
+          <div class="printer-option-status">✅ Terhubung</div>
+        </div>
+      `;
+    }
+
+    statusHtml += `
+      <div class="printer-option" onclick="${btSupported ? 'connectViaBluetooth()' : ''}" style="${btSupported ? '' : 'opacity:0.5; cursor:not-allowed;'}">
+        <div class="printer-option-icon">🔵</div>
+        <div class="printer-option-info">
+          <div class="printer-option-name">Cari Printer Bluetooth</div>
+          <div class="printer-option-type">${btSupported ? 'Buka pencarian perangkat Bluetooth nyata' : 'Tidak didukung di browser ini'}</div>
+        </div>
+      </div>
+      <div class="printer-option" onclick="${serialSupported ? 'connectViaSerial()' : ''}" style="${serialSupported ? '' : 'opacity:0.5; cursor:not-allowed;'}">
+        <div class="printer-option-icon">🔌</div>
+        <div class="printer-option-info">
+          <div class="printer-option-name">Cari Printer USB / Serial</div>
+          <div class="printer-option-type">${serialSupported ? 'Buka pencarian port USB/Serial nyata' : 'Tidak didukung di browser ini'}</div>
+        </div>
+      </div>
+    `;
+
+    if(!btSupported && !serialSupported){
+      statusHtml += `<p class="printer-unsupported">Browser ini tidak mendukung Web Bluetooth maupun Web Serial. Gunakan Google Chrome atau Microsoft Edge versi desktop (atau Chrome Android untuk Bluetooth).</p>`;
+    }
+
+    if(connectedDevice){
+      statusHtml += `
+        <button type="button" class="modal-btn-primary" style="width:100%; margin-top:4px; padding:10px; border-radius:9px;" onclick="testPrint()">🧾 Cetak Uji</button>
+        <button type="button" class="modal-btn-secondary" style="width:100%; margin-top:8px; padding:10px; border-radius:9px; color:#f87171; border-color:#5a2b2b;" onclick="disconnectPrinter()">Putuskan Sambungan</button>
+      `;
+    }
+
+    printerList.innerHTML = statusHtml;
+  }
+
+  function setConnecting(state, message){
+    isConnectingPrinter = state;
+    printerConnecting.style.display = state ? 'block' : 'none';
+    if(message) printerConnecting.textContent = message;
+  }
+  function showPrinterMessage(text, type){
+    printerMessage.textContent = text;
+    printerMessage.className = 'printer-message ' + type;
+    printerMessage.style.display = 'block';
+  }
+  function clearPrinterMessage(){
+    printerMessage.style.display = 'none';
+    printerMessage.textContent = '';
+  }
+
+  /* ----- Web Bluetooth (nyata) ----- */
+  async function connectViaBluetooth(){
+    if(!navigator.bluetooth){
+      showPrinterMessage('Web Bluetooth tidak didukung di browser ini. Gunakan Chrome/Edge.', 'error');
+      return;
+    }
+    if(isConnectingPrinter) return;
+
+    try{
+      setConnecting(true, 'Membuka daftar perangkat Bluetooth...');
+      const device = await navigator.bluetooth.requestDevice({
+        acceptAllDevices: true,
+        optionalServices: BLE_PRINTER_SERVICES
+      });
+
+      setConnecting(true, `Menghubungkan ke ${device.name || 'perangkat'}...`);
+      const server = await device.gatt.connect();
+
+      // Cari characteristic yang bisa ditulis di antara service printer yang dikenal
+      let writableChar = null;
+      for(const serviceUuid of BLE_PRINTER_SERVICES){
+        try{
+          const service = await server.getPrimaryService(serviceUuid);
+          const chars = await service.getCharacteristics();
+          writableChar = chars.find(c => c.properties.write || c.properties.writeWithoutResponse) || null;
+          if(writableChar) break;
+        } catch(innerErr){
+          // service ini tidak ada di perangkat ini, coba yang berikutnya
+        }
+      }
+
+      connectedDevice = device;
+      connectedCharacteristic = writableChar;
+      connectionType = 'bluetooth';
+
+      device.addEventListener('gattserverdisconnected', onPrinterDisconnected);
+
+      setConnecting(false);
+      renderPrinterStatus();
+      updatePrinterButton();
+
+      if(!writableChar){
+        showPrinterMessage(`Terhubung ke ${device.name || 'perangkat'} via Bluetooth, tapi characteristic cetak ESC/POS standar tidak ditemukan. Koneksi tetap aktif; mencetak mungkin perlu protokol khusus dari pabrikan printer.`, 'error');
+      }
+    } catch(err){
+      setConnecting(false);
+      if(err.name !== 'NotFoundError'){
+        showPrinterMessage('Gagal menghubungkan Bluetooth: ' + err.message, 'error');
+      }
+    }
+  }
+
+  /* ----- Web Serial (nyata, untuk printer ESC/POS USB/Serial) ----- */
+  async function connectViaSerial(){
+    if(!navigator.serial){
+      showPrinterMessage('Web Serial tidak didukung di browser ini. Gunakan Chrome/Edge desktop.', 'error');
+      return;
+    }
+    if(isConnectingPrinter) return;
+
+    try{
+      setConnecting(true, 'Membuka daftar port USB/Serial...');
+      const port = await navigator.serial.requestPort();
+      await port.open({ baudRate: 9600 });
+
+      const info = port.getInfo ? port.getInfo() : {};
+      connectedDevice = {
+        name: `USB Printer${info.usbProductId ? ' (' + info.usbProductId.toString(16) + ')' : ''}`,
+        port
+      };
+      connectionType = 'serial';
+
+      setConnecting(false);
+      renderPrinterStatus();
+      updatePrinterButton();
+    } catch(err){
+      setConnecting(false);
+      if(err.name !== 'NotFoundError'){
+        showPrinterMessage('Gagal menghubungkan USB/Serial: ' + err.message, 'error');
+      }
+    }
+  }
+
+  function onPrinterDisconnected(){
+    connectedDevice = null;
+    connectedCharacteristic = null;
+    connectionType = null;
+    renderPrinterStatus();
+    updatePrinterButton();
+  }
+
+  async function disconnectPrinter(){
+    try{
+      if(connectionType === 'bluetooth' && connectedDevice && connectedDevice.gatt && connectedDevice.gatt.connected){
+        connectedDevice.gatt.disconnect();
+      } else if(connectionType === 'serial' && connectedDevice && connectedDevice.port){
+        await connectedDevice.port.close();
+      }
+    } catch(err){
+      // abaikan error saat menutup
+    }
+    connectedDevice = null;
+    connectedCharacteristic = null;
+    connectionType = null;
+    renderPrinterStatus();
+    updatePrinterButton();
+  }
+
+  function updatePrinterButton(){
+    if(connectedDevice){
+      printerConnectBtn.textContent = `✅ ${connectedDevice.name || 'Printer'} Terhubung`;
+      printerConnectBtn.classList.add('connected');
+    } else {
+      printerConnectBtn.textContent = '🔌 Hubungkan Printer';
+      printerConnectBtn.classList.remove('connected');
+    }
+  }
+
+  async function sendToPrinter(text){
+    const encoder = new TextEncoder();
+    const data = encoder.encode(text);
+
+    if(connectionType === 'serial' && connectedDevice && connectedDevice.port){
+      const writer = connectedDevice.port.writable.getWriter();
+      await writer.write(data);
+      writer.releaseLock();
+      return true;
+    }
+
+    if(connectionType === 'bluetooth' && connectedCharacteristic){
+      // Penulisan BLE dilakukan bertahap (umumnya ~20 byte per penulisan)
+      const chunkSize = 20;
+      for(let i = 0; i < data.length; i += chunkSize){
+        const chunk = data.slice(i, i + chunkSize);
+        if(connectedCharacteristic.properties.writeWithoutResponse){
+          await connectedCharacteristic.writeValueWithoutResponse(chunk);
+        } else {
+          await connectedCharacteristic.writeValue(chunk);
+        }
+      }
+      return true;
+    }
+
+    return false;
+  }
+
+  async function sendReceiptToPrinter(text){
+    try{
+      const sent = await sendToPrinter(text);
+      if(sent){
+        showToast(`Struk terkirim ke ${connectedDevice.name || 'printer'} 🖨️`);
+      } else {
+        showToast(`Tidak ditemukan jalur tulis data ke ${connectedDevice.name || 'printer'}.`);
+      }
+    } catch(err){
+      showToast('Gagal mengirim data ke printer: ' + err.message);
+    }
+  }
+
+  /* ----- Susun teks struk (dipakai untuk pratinjau keranjang maupun struk setelah bayar) ----- */
+  function buildReceiptText(opts){
+    const lines = ['KEDAI TIKUNGAN', '------------------------------'];
+    if(opts.trxId) lines.push(`No: ${opts.trxId}`);
+    lines.push(`Tanggal: ${opts.date}`);
+    lines.push(`Kasir: ${opts.cashier || '-'}`);
+    lines.push(`Meja: ${opts.table}`);
+    lines.push('------------------------------');
+    opts.items.forEach(it=>{
+      lines.push(`${it.name} x${it.qty}  ${formatRp(it.price * it.qty)}`);
+    });
+    lines.push('------------------------------');
+    lines.push(`Subtotal: ${formatRp(opts.subtotal)}`);
+    lines.push(`Total: ${formatRp(opts.total)}`);
+    lines.push(`Metode: ${opts.method}`);
+    lines.push('------------------------------');
+    lines.push('Terima kasih!');
+    lines.push('WiFi ID: KETIK.SETU');
+    lines.push('WiFi PW: KETIKSETU16');
+    lines.push('\n\n\n');
+    return lines.join('\n');
+  }
+
+  function buildTestReceiptText(){
+    const now = new Date();
+    return [
+      'KEDAI TIKUNGAN',
+      'TES CETAK / TEST PRINT',
+      '------------------------------',
+      `Tanggal : ${now.toLocaleDateString('id-ID')}`,
+      `Waktu   : ${now.toLocaleTimeString('id-ID')}`,
+      'Printer : ' + (connectedDevice ? (connectedDevice.name || '-') : '-'),
+      '------------------------------',
+      'Jika Anda dapat membaca teks ini,',
+      'printer sudah terhubung dengan benar.',
+      '------------------------------',
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+      '0123456789',
+      '\n\n\n'
+    ].join('\n');
+  }
+
+  async function testPrint(){
+    if(!connectedDevice){
+      showPrinterMessage('Belum ada printer yang terhubung.', 'error');
+      return;
+    }
+    try{
+      const sent = await sendToPrinter(buildTestReceiptText());
+      if(sent){
+        showPrinterMessage(`Cetak uji terkirim ke ${connectedDevice.name || 'printer'} ✅ Silakan periksa hasil cetakan di printer.`, 'success');
+      } else {
+        showPrinterMessage(`Terhubung ke ${connectedDevice.name || 'printer'}, tapi tidak ditemukan jalur tulis data (characteristic cetak). Cetak uji gagal dikirim.`, 'error');
+      }
+    } catch(err){
+      showPrinterMessage('Cetak uji gagal: ' + err.message, 'error');
+    }
+  }
+
+  /* ----- Cetak keranjang meja yang sedang aktif (sebelum bayar) ----- */
+  function printCurrentOrder(){
+    if(Object.keys(cart).length === 0){
+      showToast('Keranjang masih kosong');
+      return;
+    }
+    if(!connectedDevice){
+      openPrinterModal();
+      return;
+    }
+    const items = Object.values(cart).map(line=>{
+      const p = products.find(x=>x.id==line.productId);
+      const unit = lineUnitPrice(p, line.addons);
+      const name = p.name + (line.addons && line.addons.length ? ' (' + line.addons.map(a=>'+ '+a.name).join(', ') + ')' : '');
+      return { name, qty:line.qty, price:unit };
+    });
+    const subtotal = items.reduce((s,it)=>s+it.price*it.qty,0);
+    const tax = 0;
+    const total = subtotal;
+    const receipt = buildReceiptText({
+      date: new Date().toLocaleString('id-ID'),
+      table: currentTable,
+      cashier: currentCashier,
+      items, subtotal, tax, total,
+      method: paymentMethod
+    });
+    sendReceiptToPrinter(receipt);
+  }
+
+  updatePrinterButton();
+</script>
+</body>
+</html>
